@@ -1,0 +1,1 @@
+ .\OInstall.exe  /configure Configure2.xml /activate
