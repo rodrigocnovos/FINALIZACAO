@@ -1,5 +1,5 @@
 # Caminho completo da imagem que você deseja definir como papel de parede
-$imagePath = "G:\backup rodrigo\script\startmenu 1.9.a\wallpaper\w1.jpg"
+$imagePath = ".\wallpaper\w1.jpg"
 
 # Caminho da pasta "Imagens" no perfil do usuário
 $targetFolderPath = [System.IO.Path]::Combine($env:USERPROFILE, "Pictures")

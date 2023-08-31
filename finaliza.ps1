@@ -1,0 +1,229 @@
+
+
+Add-Type -AssemblyName System.Windows.Forms
+
+$form = New-Object Windows.Forms.Form
+$form.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Opções de finalização"))
+$form.Size = New-Object Drawing.Size(400, 600)  # Aumentamos a altura para acomodar as checkboxes
+$form.StartPosition = "CenterScreen"
+# $form.TopMost = $true  # Mantém o formulário sempre em primeiro plano
+
+
+# Rótulo para exibir a contagem
+$status = New-Object Windows.Forms.Label
+$status.AutoSize = $true
+$status.Location = New-Object Drawing.Point(20, 375)
+$form.Controls.Add($status)
+
+
+# Variável para armazenar a contagem
+$contagem = 0
+
+# Função para atualizar a exibição da contagem
+# function AtualizarExibicao {
+#     $status.Text = "Progresso: $status"
+# }
+
+# Função para atualizar a contagem
+function AtualizarContagem {
+    $contagem = 0
+    if ($checkbox1.Checked) { $contagem++ }
+    if ($checkbox2.Checked) { $contagem++ }
+    if ($checkbox3.Checked) { $contagem++ }
+    if ($checkbox4.Checked) { $contagem++ }
+    if ($checkbox5.Checked) { $contagem++ }
+    if ($checkbox6.Checked) { $contagem++ }
+    if ($checkbox7.Checked) { $contagem++ }
+    if ($checkbox8.Checked) { $contagem++ }
+    # AtualizarExibicao
+    $progressBar.Maximum = $contagem
+}
+
+$label = New-Object Windows.Forms.Label
+$label.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Nome do técnico responsável e OS"))
+$label.Location = New-Object Drawing.Point(20, 20)
+$label.AutoSize = $true
+$form.Controls.Add($label)
+
+$textBox = New-Object Windows.Forms.TextBox
+$textBox.Location = New-Object Drawing.Point(20, 50)
+$textBox.Size = New-Object Drawing.Size(300, 30)
+# Vincula a função ao evento TextChanged da caixa de texto
+$textBox.Add_TextChanged({
+    if ($textBox.Text -ne "") {
+        $buttonOK.Enabled = $true  # Habilita o botão quando o campo estiver preenchido
+    } else {
+        $buttonOK.Enabled = $false
+    }
+})
+$form.Controls.Add($textBox)
+
+# CheckBoxes com opções
+$checkBox1 = New-Object Windows.Forms.CheckBox
+$checkBox1.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("1 - Limpeza de temporários, arquivos da instalacao e rastros de uso"))
+$checkBox1.AutoSize = $true
+$checkbox1.Add_CheckedChanged({ AtualizarContagem })
+# $checkBox1.Checked = $true
+$checkBox1.Name = ".\limpeza.ps1"
+$checkBox1.Location = New-Object Drawing.Point(20, 90)
+$form.Controls.Add($checkBox1)
+
+$checkBox2 = New-Object Windows.Forms.CheckBox
+$checkBox2.AutoSize = $true
+$checkBox2.Name = ".\block.ps1"
+$checkbox2.Add_CheckedChanged({ AtualizarContagem })
+$checkBox2.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("2 - Bloquear as atualizações"))
+$checkBox2.Location = New-Object Drawing.Point(20, 120)
+$form.Controls.Add($checkBox2)
+
+$checkBox3 = New-Object Windows.Forms.CheckBox
+$checkBox3.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("3 - Instalar pacote do Ninite + Anydesk"))
+$checkBox3.Name = ".\programas.ps1"
+$checkBox3.Location = New-Object Drawing.Point(20, 150)
+$checkbox3.Add_CheckedChanged({ AtualizarContagem })
+$checkBox3.AutoSize = $true
+$form.Controls.Add($checkBox3)
+
+$checkBox4 = New-Object Windows.Forms.CheckBox
+$checkBox4.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("4 - Forçar atualizações do windows update e loja"))
+$checkBox4.Name = ".\update.ps1"
+$checkBox4.Location = New-Object Drawing.Point(20, 180)
+$checkbox4.Add_CheckedChanged({ AtualizarContagem })
+$checkBox4.AutoSize = $true
+$form.Controls.Add($checkBox4)
+
+$checkBox5 = New-Object Windows.Forms.CheckBox
+$checkBox5.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("5 - Instalar office 2021 x64"))
+$checkBox5.AutoSize = $true
+$checkBox5.Name = ".\office.ps1"
+$checkBox5.Location = New-Object Drawing.Point(20, 210)
+$checkbox5.Add_CheckedChanged({ AtualizarContagem })
+$form.Controls.Add($checkBox5)
+
+$checkBox6 = New-Object Windows.Forms.CheckBox
+$checkBox6.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("6 - Selecionar programas para bloqueio no Firewall"))
+$checkBox6.AutoSize = $true
+$checkBox6.Name = ".\list_program_firewall.ps1"
+$checkBox6.Location = New-Object Drawing.Point(20, 240)
+$checkbox6.Add_CheckedChanged({ AtualizarContagem })
+$form.Controls.Add($checkBox6)
+
+
+$checkBox7 = New-Object Windows.Forms.CheckBox
+$checkBox7.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("7 -Padronização, papel de parede, icones de contatos e menus"))
+$checkBox7.AutoSize = $true
+$checkBox7.Name = ".\wallpaper.ps1"
+$checkBox7.Location = New-Object Drawing.Point(20, 270)
+$checkbox7.Add_CheckedChanged({ AtualizarContagem })
+$form.Controls.Add($checkBox7)
+
+$checkBox8 = New-Object Windows.Forms.CheckBox
+$checkBox8.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("8 - Criar ponto de restauração"))
+$checkBox8.AutoSize = $true
+$checkBox8.Name = ".\restorepoint.ps1"
+$checkBox8.Location = New-Object Drawing.Point(20, 300)
+$checkbox8.Add_CheckedChanged({ AtualizarContagem })
+$form.Controls.Add($checkBox8)
+
+# Cria uma instância da barra de progresso
+$progressBar = New-Object Windows.Forms.ProgressBar
+$progressBar.Location = New-Object Drawing.Point(20, 350)
+$progressBar.Size = New-Object Drawing.Size(340, 20)
+$progressBar.Minimum = 0
+$progressBar.Maximum = 1
+$progressBar.Step = 1  # Defina o valor do incremento
+$progressBar.Style = [System.Windows.Forms.ProgressBarStyle]::Marquee
+# Adiciona a barra de progresso ao formulário
+$form.Controls.Add($progressBar)
+
+
+
+$buttonOK = New-Object Windows.Forms.Button
+$buttonOK.Location = New-Object Drawing.Point(80, 400)
+$buttonOK.Size = New-Object Drawing.Size(80, 30)
+$buttonOK.Text = "OK"
+$buttonOK.Enabled = $false
+$buttonOK.Add_Click({
+    
+    $input = $textBox.Text   
+    
+    
+    # $opcao1 = $checkBox1.Checked
+    # $opcao2 = $checkBox2.Checked
+    # $opcao3 = $checkBox3.Checked
+    # $opcao4 = $checkBox4.Checked
+    # $opcao5 = $checkBox5.Checked
+    # $opcao6 = $checkBox6.Checked
+    # $opcao7 = $checkBox7.Checked
+    # $opcao8 = $checkBox8.Checked
+    
+    # Write-Host "Você digitou: $input"
+    # Write-Host "Opção 1 selecionada: $opcao1"
+    # Write-Host "Opção 2 selecionada: $opcao2"
+    # Write-Host "Opção 3 selecionada: $opcao3"
+    # Write-Host "Opção 4 selecionada: $opcao4"
+    # Write-Host "Opção 5 selecionada: $opcao5"
+    # Write-Host "Opção 6 selecionada: $opcao6"
+    # Write-Host "Opção 7 selecionada: $opcao7"
+    # Write-Host "Opção 8 selecionada: $opcao8"
+    
+    function ExecuteSelectedScripts{param($scriptPath, $text) 
+        
+        if (Test-Path $scriptPath) {
+            # Executa o script em um novo processo e espera a conclusão
+            $progressBar.PerformStep()
+            Write-Host $text
+            $status.Text = "Executando: "+$text
+            $process = Start-Process powershell.exe -ArgumentList "-File $scriptPath" -NoNewWindow -PassThru -Wait 
+            
+            $exitCode = $process.ExitCode
+            if ($exitCode -eq 0) {
+                Write-Host "Script concluído com êxito."
+            } else {
+                Write-Host "Script falhou com código de saída $exitCode."
+            }
+        } else {
+            Write-Host "Script não encontrado: $scriptPath"
+        }
+        
+    }
+    
+    if ($input -ne $null) {      
+        # Caminho para o arquivo onde a variável será armazenada
+        $caminhoArquivo = ".\tmp.txt"
+        # Gravar o valor da variável no arquivo
+        $input | Out-File -FilePath $caminhoArquivo
+        Write-Host "$input"
+        ExecuteSelectedScripts(".\OEMInformation.ps1")
+    }
+
+    
+
+    
+
+    if ($checkbox1.Checked) { ExecuteSelectedScripts $checkBox1.Name $checkBox1.Text }
+    if ($checkbox2.Checked) { ExecuteSelectedScripts $checkBox2.Name $checkBox2.Text }
+    if ($checkbox3.Checked) { 
+        ExecuteSelectedScripts $checkBox3.Name $checkBox3.Text
+        
+     }
+    if ($checkbox4.Checked) { ExecuteSelectedScripts $checkBox4.Name $checkBox4.Text }
+    if ($checkbox5.Checked) { ExecuteSelectedScripts $checkBox5.Name $checkBox5.Text }
+    if ($checkbox6.Checked) { ExecuteSelectedScripts $checkBox6.Name $checkBox6.Tex  }
+    if ($checkbox7.Checked) { ExecuteSelectedScripts $checkBox7.Name $checkBox7.Text }
+    if ($checkbox8.Checked) { ExecuteSelectedScripts $checkBox8.Name $checkBox8.Text }
+
+    
+
+    $form.Close()
+})
+$form.Controls.Add($buttonOK)
+
+$buttonCancel = New-Object Windows.Forms.Button
+$buttonCancel.Location = New-Object Drawing.Point(170, 400)
+$buttonCancel.Size = New-Object Drawing.Size(80, 30)
+$buttonCancel.Text = "Cancelar"
+$buttonCancel.Add_Click({ $form.Close() })
+$form.Controls.Add($buttonCancel)
+
+$form.ShowDialog()
