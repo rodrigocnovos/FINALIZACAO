@@ -1,2 +1,4 @@
 Enable-ComputerRestore -Drive "c:\"
-Checkpoint-Computer -Description "Microfacil" -RestorePointType MODIFY_SETTINGS
+$timestamp = Get-Date -Format "yyyyMMddHHmmss"
+$description = "Ponto de Restauração Criado em $timestamp"
+Checkpoint-Computer -Description $description -RestorePointType MODIFY_SETTINGS

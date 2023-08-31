@@ -1,8 +1,23 @@
+
+#Caminho dos ícones
+$iconsPath = ".\ico\*.url"
 # Caminho completo da imagem que você deseja definir como papel de parede
 $imagePath = ".\wallpaper\w1.jpg"
 
 # Caminho da pasta "Imagens" no perfil do usuário
-$targetFolderPath = [System.IO.Path]::Combine($env:USERPROFILE, "Pictures")
+# $targetFolderPath = [System.IO.Path]::Combine($env:USERPROFILE, "Pictures")
+$targetFolderPath = "C:\Users\Public\Pictures"
+
+
+#Caminho para o desktop do usuário corrente
+$desktopPath = [Environment]::GetFolderPath("Desktop")
+
+Remove-Item $desktopPath\* -Force
+
+# Excluir arquivos do desktop público
+$publicDesktopPath = [System.Environment]::GetFolderPath("CommonDesktopDirectory")
+Remove-Item "$publicDesktopPath\*" -Force
+
 
 # Verifica se a pasta "Imagens" existe, se não, cria a pasta
 if (-Not (Test-Path $targetFolderPath)) {
@@ -12,6 +27,11 @@ if (-Not (Test-Path $targetFolderPath)) {
 # Copia a imagem para a pasta "Imagens"
 $targetImagePath = [System.IO.Path]::Combine($targetFolderPath, (Get-Item $imagePath).Name)
 Copy-Item $imagePath -Destination $targetImagePath -Force
+
+#Copia os ícones para a área de trabalho corrente do usuário
+Copy-Item $iconsPath -Destination $desktopPath -Force
+
+
 
 # Define a nova imagem como papel de parede
 $SPI_SETDESKWALLPAPER = 0x0014
@@ -30,3 +50,14 @@ public class Wallpaper {
 
 # Chama a função para definir o papel de parede
 [Wallpaper]::SystemParametersInfo($SPI_SETDESKWALLPAPER, 0, $targetImagePath, $SPIF_UPDATEINIFILE -bor $SPIF_SENDCHANGE)
+
+#Copia a imagem da Microfácil para a OEM LOGO
+
+$ImagensPublicas = [System.Environment]::GetFolderPath("CommonPictures")
+Copy-Item oemlogo.bmp $ImagensPublicas
+
+$regeditPath = Join-Path $env:SystemRoot "regedit.exe"
+Start-Process $regeditPath -ArgumentList "/s  .\icon_homeuser_computer.reg"  -Wait
+Start-Process $regeditPath -ArgumentList "/s  .\DefaultLayouts.reg" -Wait
+Start-Process $regeditPath -ArgumentList "/s  .\logowin10.reg" -Wait
+

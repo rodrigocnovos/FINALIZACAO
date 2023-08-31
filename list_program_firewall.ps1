@@ -18,8 +18,13 @@ $checkedListBox = New-Object Windows.Forms.CheckedListBox
 $checkedListBox.Location = New-Object Drawing.Point(20, 50)
 $checkedListBox.Size = New-Object Drawing.Size(460, 250)
 
+
+# Get-ItemProperty HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\* | Select-Object DisplayName, DisplayVersion | Sort-Object -Property DisplayName -Unique | Format-Table -AutoSize
+
+
+
 # Lista os programas instalados usando o registro do Windows
-$uninstallKey = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*"
+$uninstallKey = "HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*"
 $programs = Get-ItemProperty $uninstallKey | Where-Object { $_.DisplayName -and $_.UninstallString }
 
 foreach ($program in $programs) {
@@ -49,6 +54,7 @@ $buttonOK.Add_Click({
                 # Criar regras de firewall aqui (necessita privilégios de administrador)
                 # Exemplo: New-NetFirewallRule -DisplayName "Bloqueio $program" -Direction Outbound -Program $executablePath -Action Block
                 New-NetFirewallRule -DisplayName "Bloqueio $program" -Direction Outbound -Program $executablePath -Action Block
+                New-NetFirewallRule -DisplayName "Bloqueio $program" -Direction Inbound -Program $executablePath -Action Block
             }
         }
     }
@@ -58,7 +64,7 @@ $form.Controls.Add($buttonOK)
 
 # Função para obter a pasta de instalação do programa
 function GetProgramInstallLocation($programName) {
-    $uninstallKey = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*"
+    $uninstallKey = "HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*"
     $program = Get-ItemProperty $uninstallKey | Where-Object { $_.DisplayName -eq $programName }
     return $program.InstallLocation
 }
