@@ -145,7 +145,7 @@ $buttonOK.Text = "OK"
 $buttonOK.Enabled = $false
 $buttonOK.Add_Click({
     
-    $input = $textBox.Text   
+    $tecnicoOS = $textBox.Text   
     
     
     # $opcao1 = $checkBox1.Checked
@@ -157,7 +157,7 @@ $buttonOK.Add_Click({
     # $opcao7 = $checkBox7.Checked
     # $opcao8 = $checkBox8.Checked
     
-    # Write-Host "Você digitou: $input"
+    # Write-Host "Você digitou: $tecnicoOS"
     # Write-Host "Opção 1 selecionada: $opcao1"
     # Write-Host "Opção 2 selecionada: $opcao2"
     # Write-Host "Opção 3 selecionada: $opcao3"
@@ -188,12 +188,12 @@ $buttonOK.Add_Click({
         
     }
     
-    if ($input -ne $null) {      
+    if ($tecnicoOS -ne $null) {      
         # Caminho para o arquivo onde a variável será armazenada
         $caminhoArquivo = ".\tmp.txt"
         # Gravar o valor da variável no arquivo
-        $input | Out-File -FilePath $caminhoArquivo
-        Write-Host "$input"
+        $tecnicoOS | Out-File -FilePath $caminhoArquivo
+        Write-Host "$tecnicoOS"
         ExecuteSelectedScripts(".\OEMInformation.ps1")
     }
 
