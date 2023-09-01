@@ -12,3 +12,10 @@ reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation" /v Suppo
 reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation" /v SupportPhone /t REG_SZ /d "( 84 ) 99625-5676 ( 84 ) 3412-3863" /f
 reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation" /v SupportURL /t REG_SZ /d "https:\\www.microfacilrn.com.br" /f
 reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation" /v Logo /t REG_SZ /d "\\Users\\Public\\Pictures\\oemlogo.bmp" /f
+
+
+
+#Copia a imagem da Microfácil para a OEM LOGO
+
+$ImagensPublicas = [System.Environment]::GetFolderPath("CommonPictures")
+Copy-Item oemlogo.bmp $ImagensPublicas

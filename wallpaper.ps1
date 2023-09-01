@@ -51,10 +51,13 @@ public class Wallpaper {
 # Chama a função para definir o papel de parede
 [Wallpaper]::SystemParametersInfo($SPI_SETDESKWALLPAPER, 0, $targetImagePath, $SPIF_UPDATEINIFILE -bor $SPIF_SENDCHANGE)
 
-#Copia a imagem da Microfácil para a OEM LOGO
 
-$ImagensPublicas = [System.Environment]::GetFolderPath("CommonPictures")
-Copy-Item oemlogo.bmp $ImagensPublicas
+
+#  "Copiando o modelo padronizado do layout do menu"
+$sourceFilePath = ".\DefaultLayouts.xml"
+$destinationFolderPath = "$env:LocalAppData\Microsoft\Windows\Shell"
+
+Copy-Item -Path $sourceFilePath -Destination $destinationFolderPath
 
 $regeditPath = Join-Path $env:SystemRoot "regedit.exe"
 Start-Process $regeditPath -ArgumentList "/s  .\icon_homeuser_computer.reg"  -Wait

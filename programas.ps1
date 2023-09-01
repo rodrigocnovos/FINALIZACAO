@@ -8,13 +8,13 @@ $programList +=[PSCustomObject]@{
     param4 = "--create-desktop-icon"
 }
 
-$programList +=[PSCustomObject]@{
-    programa = ".\softwares\ninite.exe";
-    param1 = " ";
-    param2 = " ";
-    param3 = " ";
-    param4 = " "
-}
+# $programList +=[PSCustomObject]@{
+#     programa = ".\softwares\ninite.exe";
+#     param1 = " ";
+#     param2 = " ";
+#     param3 = " ";
+#     param4 = " "
+# }
 
 $programList
 
@@ -29,3 +29,6 @@ foreach ($program in $programList) {
         choco install $program -y
     }
 }
+
+powershell.exe .\softwares\ninite.exe 
+# powershell.exe .\softwares\AnyDesk.exe --install --start-with-win --create-desktop-icon

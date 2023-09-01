@@ -1,6 +1,5 @@
-# driverquery /v > relatorio_de_drivers.txt
+devmgmt.msc
 
-# Get-Content relatorio_de_drivers.txt | Where-Object { $_ -match "NULL" } | ForEach-Object { $_ -replace '\s+', ' ' } | ForEach-Object { $_.Split(' ')[2] }
 
 Add-Type -AssemblyName System.Windows.Forms
 

@@ -12,7 +12,7 @@ $form.StartPosition = "CenterScreen"
 # Rótulo para exibir a contagem
 $status = New-Object Windows.Forms.Label
 $status.AutoSize = $true
-$status.Location = New-Object Drawing.Point(20, 375)
+$status.Location = New-Object Drawing.Point(20, 405)
 $form.Controls.Add($status)
 
 
@@ -50,7 +50,7 @@ $textBox.Location = New-Object Drawing.Point(20, 50)
 $textBox.Size = New-Object Drawing.Size(300, 30)
 # Vincula a função ao evento TextChanged da caixa de texto
 $textBox.Add_TextChanged({
-    if ($textBox.Text -ne "") {
+    if ($textBox.Text -ne "" -and $textBox.Text -match '\p{L}' -and $textBox.Text -match '\d') {
         $buttonOK.Enabled = $true  # Habilita o botão quando o campo estiver preenchido
     } else {
         $buttonOK.Enabled = $false
@@ -60,11 +60,11 @@ $form.Controls.Add($textBox)
 
 # CheckBoxes com opções
 $checkBox1 = New-Object Windows.Forms.CheckBox
-$checkBox1.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("1 - Limpeza de temporários, arquivos da instalacao e rastros de uso"))
+$checkBox1.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("1 - Checar se faltam drivers"))
 $checkBox1.AutoSize = $true
 $checkbox1.Add_CheckedChanged({ AtualizarContagem })
 # $checkBox1.Checked = $true
-$checkBox1.Name = ".\limpeza.ps1"
+$checkBox1.Name = ".\rel_driver.ps1"
 $checkBox1.Location = New-Object Drawing.Point(20, 90)
 $form.Controls.Add($checkBox1)
 
@@ -125,55 +125,47 @@ $checkBox8.Location = New-Object Drawing.Point(20, 300)
 $checkbox8.Add_CheckedChanged({ AtualizarContagem })
 $form.Controls.Add($checkBox8)
 
+$checkBox9 = New-Object Windows.Forms.CheckBox
+$checkBox9.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("9 - Limpeza de temporários, arquivos da instalacao e rastros de uso"))
+$checkBox9.AutoSize = $true
+$checkBox9.Name = ".\limpeza.ps1"
+$checkBox9.Location = New-Object Drawing.Point(20, 330)
+$checkbox9.Add_CheckedChanged({ AtualizarContagem })
+$form.Controls.Add($checkBox9)
+
 # Cria uma instância da barra de progresso
 $progressBar = New-Object Windows.Forms.ProgressBar
-$progressBar.Location = New-Object Drawing.Point(20, 350)
+$progressBar.Location = New-Object Drawing.Point(20, 380)
 $progressBar.Size = New-Object Drawing.Size(340, 20)
 $progressBar.Minimum = 0
 $progressBar.Maximum = 1
 $progressBar.Step = 1  # Defina o valor do incremento
-$progressBar.Style = [System.Windows.Forms.ProgressBarStyle]::Marquee
 # Adiciona a barra de progresso ao formulário
 $form.Controls.Add($progressBar)
 
 
 
 $buttonOK = New-Object Windows.Forms.Button
-$buttonOK.Location = New-Object Drawing.Point(80, 400)
+$buttonOK.Location = New-Object Drawing.Point(80, 430)
 $buttonOK.Size = New-Object Drawing.Size(80, 30)
 $buttonOK.Text = "OK"
 $buttonOK.Enabled = $false
 $buttonOK.Add_Click({
     
-    $tecnicoOS = $textBox.Text   
+    $tecnicoOS = $textBox.Text       
     
-    
-    # $opcao1 = $checkBox1.Checked
-    # $opcao2 = $checkBox2.Checked
-    # $opcao3 = $checkBox3.Checked
-    # $opcao4 = $checkBox4.Checked
-    # $opcao5 = $checkBox5.Checked
-    # $opcao6 = $checkBox6.Checked
-    # $opcao7 = $checkBox7.Checked
-    # $opcao8 = $checkBox8.Checked
-    
-    # Write-Host "Você digitou: $tecnicoOS"
-    # Write-Host "Opção 1 selecionada: $opcao1"
-    # Write-Host "Opção 2 selecionada: $opcao2"
-    # Write-Host "Opção 3 selecionada: $opcao3"
-    # Write-Host "Opção 4 selecionada: $opcao4"
-    # Write-Host "Opção 5 selecionada: $opcao5"
-    # Write-Host "Opção 6 selecionada: $opcao6"
-    # Write-Host "Opção 7 selecionada: $opcao7"
-    # Write-Host "Opção 8 selecionada: $opcao8"
-    
+        
     function ExecuteSelectedScripts{param($scriptPath, $text) 
         
         if (Test-Path $scriptPath) {
-            # Executa o script em um novo processo e espera a conclusão
-            $progressBar.PerformStep()
-            Write-Host $text
+            #Caso não clique em nada não rode o progressbar
+            
+            if ($text -ne "") {
+                $progressBar.PerformStep()  
+            }
+            
             $status.Text = "Executando: "+$text
+            # Executa o script em um novo processo e espera a conclusão
             $process = Start-Process powershell.exe -ArgumentList "-File $scriptPath" -NoNewWindow -PassThru -Wait 
             
             $exitCode = $process.ExitCode
@@ -193,7 +185,6 @@ $buttonOK.Add_Click({
         $caminhoArquivo = ".\tmp.txt"
         # Gravar o valor da variável no arquivo
         $tecnicoOS | Out-File -FilePath $caminhoArquivo
-        Write-Host "$tecnicoOS"
         ExecuteSelectedScripts(".\OEMInformation.ps1")
     }
 
@@ -203,13 +194,10 @@ $buttonOK.Add_Click({
 
     if ($checkbox1.Checked) { ExecuteSelectedScripts $checkBox1.Name $checkBox1.Text }
     if ($checkbox2.Checked) { ExecuteSelectedScripts $checkBox2.Name $checkBox2.Text }
-    if ($checkbox3.Checked) { 
-        ExecuteSelectedScripts $checkBox3.Name $checkBox3.Text
-        
-     }
+    if ($checkbox3.Checked) { ExecuteSelectedScripts $checkBox3.Name $checkBox3.Text }
     if ($checkbox4.Checked) { ExecuteSelectedScripts $checkBox4.Name $checkBox4.Text }
     if ($checkbox5.Checked) { ExecuteSelectedScripts $checkBox5.Name $checkBox5.Text }
-    if ($checkbox6.Checked) { ExecuteSelectedScripts $checkBox6.Name $checkBox6.Tex  }
+    if ($checkbox6.Checked) { ExecuteSelectedScripts $checkBox6.Name $checkBox6.Text }
     if ($checkbox7.Checked) { ExecuteSelectedScripts $checkBox7.Name $checkBox7.Text }
     if ($checkbox8.Checked) { ExecuteSelectedScripts $checkBox8.Name $checkBox8.Text }
 
@@ -220,7 +208,7 @@ $buttonOK.Add_Click({
 $form.Controls.Add($buttonOK)
 
 $buttonCancel = New-Object Windows.Forms.Button
-$buttonCancel.Location = New-Object Drawing.Point(170, 400)
+$buttonCancel.Location = New-Object Drawing.Point(170, 430)
 $buttonCancel.Size = New-Object Drawing.Size(80, 30)
 $buttonCancel.Text = "Cancelar"
 $buttonCancel.Add_Click({ $form.Close() })
