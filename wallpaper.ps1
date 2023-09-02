@@ -1,10 +1,29 @@
+$osInfo = Get-CimInstance -ClassName Win32_OperatingSystem
 
+if ($osInfo.Caption -like "*Windows 7*") {
+    # Caminho completo da imagem que você deseja definir como papel de parede
+    $imagePath = ".\wallpaper\w7.jpg"    
+}
+elseif ($osInfo.Caption -like "*Windows 8*") {
+    # Caminho completo da imagem que você deseja definir como papel de parede
+    $imagePath = ".\wallpaper\w8.jpg"
+}
+elseif ($osInfo.Caption -like "*Windows 10*") {
+    # Caminho completo da imagem que você deseja definir como papel de parede
+    $imagePath = ".\wallpaper\w10.jpg"
+}
+elseif ($osInfo.Caption -like "*Windows 11*") {
+    # Caminho completo da imagem que você deseja definir como papel de parede
+    $imagePath = ".\wallpaper\w11.jpg"
+    
+}
+
+Write-Host $imagePath
 #Caminho dos ícones
 $iconsPath = ".\ico\*.url"
-# Caminho completo da imagem que você deseja definir como papel de parede
-$imagePath = ".\wallpaper\w1.jpg"
+$iconsPathico = ".\ico\*.ico"
 
-# Caminho da pasta "Imagens" no perfil do usuário
+# Caminho da pasta "Imagens" no perfil no perfil púbolico
 # $targetFolderPath = [System.IO.Path]::Combine($env:USERPROFILE, "Pictures")
 $targetFolderPath = "C:\Users\Public\Pictures"
 
@@ -12,11 +31,11 @@ $targetFolderPath = "C:\Users\Public\Pictures"
 #Caminho para o desktop do usuário corrente
 $desktopPath = [Environment]::GetFolderPath("Desktop")
 
-Remove-Item $desktopPath\* -Force
+Remove-Item $desktopPath\* -Force -Recurse
 
 # Excluir arquivos do desktop público
 $publicDesktopPath = [System.Environment]::GetFolderPath("CommonDesktopDirectory")
-Remove-Item "$publicDesktopPath\*" -Force
+Remove-Item "$publicDesktopPath\*" -Force -Recurse
 
 
 # Verifica se a pasta "Imagens" existe, se não, cria a pasta
@@ -26,7 +45,9 @@ if (-Not (Test-Path $targetFolderPath)) {
 
 # Copia a imagem para a pasta "Imagens"
 $targetImagePath = [System.IO.Path]::Combine($targetFolderPath, (Get-Item $imagePath).Name)
+Write-Host $targetImagePath
 Copy-Item $imagePath -Destination $targetImagePath -Force
+Copy-Item $iconsPathico -Destination $targetFolderPath -Force
 
 #Copia os ícones para a área de trabalho corrente do usuário
 Copy-Item $iconsPath -Destination $desktopPath -Force

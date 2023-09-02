@@ -4,4 +4,4 @@ Import-Module PSWindowsUpdate -Force
 Get-WindowsUpdate
 
 
-Install-WindowsUpdate -ForceInstall -AcceptAll
+Install-WindowsUpdate -acceptall  -ForceInstall -IgnoreUserInput

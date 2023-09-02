@@ -33,7 +33,7 @@ function AtualizarContagem {
     if ($checkbox4.Checked) { $contagem++ }
     if ($checkbox5.Checked) { $contagem++ }
     if ($checkbox6.Checked) { $contagem++ }
-    if ($checkbox7.Checked) { $contagem++ }
+    if ($checkbox2.Checked) { $contagem++ }
     if ($checkbox8.Checked) { $contagem++ }
     # AtualizarExibicao
     $progressBar.Maximum = $contagem
@@ -68,13 +68,15 @@ $checkBox1.Name = ".\rel_driver.ps1"
 $checkBox1.Location = New-Object Drawing.Point(20, 90)
 $form.Controls.Add($checkBox1)
 
+
 $checkBox2 = New-Object Windows.Forms.CheckBox
+$checkBox2.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("2 -Padronização, papel de parede, icones de contatos e menus"))
 $checkBox2.AutoSize = $true
-$checkBox2.Name = ".\block.ps1"
-$checkbox2.Add_CheckedChanged({ AtualizarContagem })
-$checkBox2.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("2 - Bloquear as atualizações"))
+$checkBox2.Name = ".\wallpaper.ps1"
 $checkBox2.Location = New-Object Drawing.Point(20, 120)
+$checkbox2.Add_CheckedChanged({ AtualizarContagem })
 $form.Controls.Add($checkBox2)
+
 
 $checkBox3 = New-Object Windows.Forms.CheckBox
 $checkBox3.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("3 - Instalar pacote do Ninite + Anydesk"))
@@ -108,13 +110,12 @@ $checkBox6.Location = New-Object Drawing.Point(20, 240)
 $checkbox6.Add_CheckedChanged({ AtualizarContagem })
 $form.Controls.Add($checkBox6)
 
-
 $checkBox7 = New-Object Windows.Forms.CheckBox
-$checkBox7.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("7 -Padronização, papel de parede, icones de contatos e menus"))
 $checkBox7.AutoSize = $true
-$checkBox7.Name = ".\wallpaper.ps1"
-$checkBox7.Location = New-Object Drawing.Point(20, 270)
+$checkBox7.Name = ".\block.ps1"
 $checkbox7.Add_CheckedChanged({ AtualizarContagem })
+$checkBox7.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("7 - Bloquear as atualizações"))
+$checkBox7.Location = New-Object Drawing.Point(20, 270)
 $form.Controls.Add($checkBox7)
 
 $checkBox8 = New-Object Windows.Forms.CheckBox
@@ -152,7 +153,8 @@ $buttonOK.Text = "OK"
 $buttonOK.Enabled = $false
 $buttonOK.Add_Click({
     
-    $tecnicoOS = $textBox.Text       
+$tecnicoOS = $textBox.Text
+       
     
         
     function ExecuteSelectedScripts{param($scriptPath, $text) 
@@ -198,7 +200,7 @@ $buttonOK.Add_Click({
     if ($checkbox4.Checked) { ExecuteSelectedScripts $checkBox4.Name $checkBox4.Text }
     if ($checkbox5.Checked) { ExecuteSelectedScripts $checkBox5.Name $checkBox5.Text }
     if ($checkbox6.Checked) { ExecuteSelectedScripts $checkBox6.Name $checkBox6.Text }
-    if ($checkbox7.Checked) { ExecuteSelectedScripts $checkBox7.Name $checkBox7.Text }
+    if ($checkbox2.Checked) { ExecuteSelectedScripts $checkBox2.Name $checkBox2.Text }
     if ($checkbox8.Checked) { ExecuteSelectedScripts $checkBox8.Name $checkBox8.Text }
 
     

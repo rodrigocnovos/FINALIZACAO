@@ -41,6 +41,11 @@ if ($lastDriver -eq 0) {
     <# Action to perform if the condition is true #>
 }else {
     $buttonOK.Text = "Pesquisar na internet"
+    
+}
+
+$buttonOK.Enabled = $true
+$buttonOK.Add_Click({  
     # Iterar pelos dispositivos sem driver
     foreach ($device in $devicesWithoutDriver) {
         $hardwareID = $device.PNPDeviceID
@@ -50,10 +55,9 @@ if ($lastDriver -eq 0) {
         # Abrir pesquisa no Google com o Hardware ID
         OpenGoogleSearch $hardwareID
     }
-}
-
-$buttonOK.Enabled = $true
-$buttonOK.Add_Click({      
+    
+    
+    
     $form.Close()
 })
 $form.Controls.Add($buttonOK)
