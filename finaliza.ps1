@@ -12,7 +12,7 @@ $form.StartPosition = "CenterScreen"
 # Rótulo para exibir a contagem
 $status = New-Object Windows.Forms.Label
 $status.AutoSize = $true
-$status.Location = New-Object Drawing.Point(20, 405)
+$status.Location = New-Object Drawing.Point(20, 390)
 $form.Controls.Add($status)
 
 
@@ -33,8 +33,10 @@ function AtualizarContagem {
     if ($checkbox4.Checked) { $contagem++ }
     if ($checkbox5.Checked) { $contagem++ }
     if ($checkbox6.Checked) { $contagem++ }
-    if ($checkbox2.Checked) { $contagem++ }
+    if ($checkbox7.Checked) { $contagem++ }
     if ($checkbox8.Checked) { $contagem++ }
+    if ($checkbox9.Checked) { $contagem++ }
+    if ($checkbox10.Checked) { $contagem++ }
     # AtualizarExibicao
     $progressBar.Maximum = $contagem
 }
@@ -68,11 +70,10 @@ $checkBox1.Name = ".\rel_driver.ps1"
 $checkBox1.Location = New-Object Drawing.Point(20, 90)
 $form.Controls.Add($checkBox1)
 
-
 $checkBox2 = New-Object Windows.Forms.CheckBox
-$checkBox2.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("2 -Padronização, papel de parede, icones de contatos e menus"))
+$checkBox2.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("2 - Instalar office 2021 x64 PT-BR ativado"))
 $checkBox2.AutoSize = $true
-$checkBox2.Name = ".\wallpaper.ps1"
+$checkBox2.Name = ".\office.ps1"
 $checkBox2.Location = New-Object Drawing.Point(20, 120)
 $checkbox2.Add_CheckedChanged({ AtualizarContagem })
 $form.Controls.Add($checkBox2)
@@ -88,56 +89,67 @@ $form.Controls.Add($checkBox3)
 
 $checkBox4 = New-Object Windows.Forms.CheckBox
 $checkBox4.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("4 - Forçar atualizações do windows update e loja"))
-$checkBox4.Name = ".\update.ps1"
+$checkBox4.Name = ".\wupdate.ps1"
 $checkBox4.Location = New-Object Drawing.Point(20, 180)
 $checkbox4.Add_CheckedChanged({ AtualizarContagem })
 $checkBox4.AutoSize = $true
 $form.Controls.Add($checkBox4)
 
+
 $checkBox5 = New-Object Windows.Forms.CheckBox
-$checkBox5.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("5 - Instalar office 2021 x64"))
+$checkBox5.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("5 - Selecionar programas para bloqueio no Firewall"))
 $checkBox5.AutoSize = $true
-$checkBox5.Name = ".\office.ps1"
+$checkBox5.Name = ".\list_program_firewall.ps1"
 $checkBox5.Location = New-Object Drawing.Point(20, 210)
 $checkbox5.Add_CheckedChanged({ AtualizarContagem })
 $form.Controls.Add($checkBox5)
 
 $checkBox6 = New-Object Windows.Forms.CheckBox
-$checkBox6.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("6 - Selecionar programas para bloqueio no Firewall"))
+$checkBox6.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("6 - Limpeza de temporários, arquivos da instalacao e rastros de uso"))
 $checkBox6.AutoSize = $true
-$checkBox6.Name = ".\list_program_firewall.ps1"
+$checkBox6.Name = ".\limpeza.ps1"
 $checkBox6.Location = New-Object Drawing.Point(20, 240)
 $checkbox6.Add_CheckedChanged({ AtualizarContagem })
 $form.Controls.Add($checkBox6)
 
 $checkBox7 = New-Object Windows.Forms.CheckBox
+$checkBox7.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("7 -Padronização, papel de parede, icones de contatos e menus"))
 $checkBox7.AutoSize = $true
-$checkBox7.Name = ".\block.ps1"
-$checkbox7.Add_CheckedChanged({ AtualizarContagem })
-$checkBox7.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("7 - Bloquear as atualizações"))
+$checkBox7.Name = ".\wallpaper.ps1"
 $checkBox7.Location = New-Object Drawing.Point(20, 270)
+$checkbox7.Add_CheckedChanged({ AtualizarContagem })
 $form.Controls.Add($checkBox7)
 
 $checkBox8 = New-Object Windows.Forms.CheckBox
-$checkBox8.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("8 - Criar ponto de restauração"))
 $checkBox8.AutoSize = $true
-$checkBox8.Name = ".\restorepoint.ps1"
-$checkBox8.Location = New-Object Drawing.Point(20, 300)
+$checkBox8.Name = ".\block.ps1"
 $checkbox8.Add_CheckedChanged({ AtualizarContagem })
+$checkBox8.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("8 - Bloquear as atualizações"))
+$checkBox8.Location = New-Object Drawing.Point(20, 300)
 $form.Controls.Add($checkBox8)
 
 $checkBox9 = New-Object Windows.Forms.CheckBox
-$checkBox9.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("9 - Limpeza de temporários, arquivos da instalacao e rastros de uso"))
+$checkBox9.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("9 - Criar ponto de restauração"))
 $checkBox9.AutoSize = $true
-$checkBox9.Name = ".\limpeza.ps1"
+$checkBox9.Name = ".\restorepoint.ps1"
 $checkBox9.Location = New-Object Drawing.Point(20, 330)
 $checkbox9.Add_CheckedChanged({ AtualizarContagem })
 $form.Controls.Add($checkBox9)
 
+$checkBox10 = New-Object Windows.Forms.CheckBox
+$checkBox10.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("10 - Ativador Windows10/11"))
+$checkBox10.AutoSize = $true
+$checkBox10.Name = ".\licenca.ps1"
+$checkBox10.Location = New-Object Drawing.Point(20, 360)
+$checkbox10.Add_CheckedChanged({ AtualizarContagem })
+$form.Controls.Add($checkBox10)
+
+
+
 # Cria uma instância da barra de progresso
 $progressBar = New-Object Windows.Forms.ProgressBar
-$progressBar.Location = New-Object Drawing.Point(20, 380)
-$progressBar.Size = New-Object Drawing.Size(340, 20)
+$progressBar.Location = New-Object Drawing.Point(5, 410)
+$progressBar.Size = New-Object Drawing.Size(370, 20)
 $progressBar.Minimum = 0
 $progressBar.Maximum = 1
 $progressBar.Step = 1  # Defina o valor do incremento
@@ -147,7 +159,7 @@ $form.Controls.Add($progressBar)
 
 
 $buttonOK = New-Object Windows.Forms.Button
-$buttonOK.Location = New-Object Drawing.Point(80, 430)
+$buttonOK.Location = New-Object Drawing.Point(80, 450)
 $buttonOK.Size = New-Object Drawing.Size(80, 30)
 $buttonOK.Text = "OK"
 $buttonOK.Enabled = $false
@@ -190,9 +202,6 @@ $tecnicoOS = $textBox.Text
         ExecuteSelectedScripts(".\OEMInformation.ps1")
     }
 
-    
-
-    
 
     if ($checkbox1.Checked) { ExecuteSelectedScripts $checkBox1.Name $checkBox1.Text }
     if ($checkbox2.Checked) { ExecuteSelectedScripts $checkBox2.Name $checkBox2.Text }
@@ -200,8 +209,10 @@ $tecnicoOS = $textBox.Text
     if ($checkbox4.Checked) { ExecuteSelectedScripts $checkBox4.Name $checkBox4.Text }
     if ($checkbox5.Checked) { ExecuteSelectedScripts $checkBox5.Name $checkBox5.Text }
     if ($checkbox6.Checked) { ExecuteSelectedScripts $checkBox6.Name $checkBox6.Text }
-    if ($checkbox2.Checked) { ExecuteSelectedScripts $checkBox2.Name $checkBox2.Text }
+    if ($checkbox7.Checked) { ExecuteSelectedScripts $checkBox7.Name $checkBox7.Text }
     if ($checkbox8.Checked) { ExecuteSelectedScripts $checkBox8.Name $checkBox8.Text }
+    if ($checkbox9.Checked) { ExecuteSelectedScripts $checkBox9.Name $checkBox9.Text }
+    if ($checkbox10.Checked) { ExecuteSelectedScripts $checkBox10.Name $checkBox10.Text }
 
     
 
@@ -210,7 +221,7 @@ $tecnicoOS = $textBox.Text
 $form.Controls.Add($buttonOK)
 
 $buttonCancel = New-Object Windows.Forms.Button
-$buttonCancel.Location = New-Object Drawing.Point(170, 430)
+$buttonCancel.Location = New-Object Drawing.Point(170, 450)
 $buttonCancel.Size = New-Object Drawing.Size(80, 30)
 $buttonCancel.Text = "Cancelar"
 $buttonCancel.Add_Click({ $form.Close() })

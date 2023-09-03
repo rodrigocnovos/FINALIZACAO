@@ -38,6 +38,13 @@ Remove-Item -Path %APPDATA%\Microsoft\Windows\Recent\* -Force -ErrorAction Silen
 #Limpando update
 Remove-Item -Path "C:\Windows\SoftwareDistribution" * -Force -Recurse -ErrorAction SilentlyContinue
 
+#Caminho para o desktop do usuário corrente
+$desktopPath = [Environment]::GetFolderPath("Desktop")
+Remove-Item $desktopPath\* -Force -Recurse
+
+# Excluir arquivos do desktop público
+$publicDesktopPath = [System.Environment]::GetFolderPath("CommonDesktopDirectory")
+Remove-Item "$publicDesktopPath\*" -Force -Recurse
 
 Clear-Host
 Write-Host "Limpeza concluída."

@@ -1,4 +1,5 @@
-Install-Module -Name PSWindowsUpdate -Force
+echo S | powershell Install-Module -Name PSWindowsUpdate | echo S
+# Install-Module -Name PSWindowsUpdate -Force
 Import-Module PSWindowsUpdate -Force
 
 Get-WindowsUpdate

@@ -28,14 +28,13 @@ $iconsPathico = ".\ico\*.ico"
 $targetFolderPath = "C:\Users\Public\Pictures"
 
 
-#Caminho para o desktop do usuário corrente
+# #Caminho para o desktop do usuário corrente
 $desktopPath = [Environment]::GetFolderPath("Desktop")
+# Remove-Item $desktopPath\* -Force -Recurse
 
-Remove-Item $desktopPath\* -Force -Recurse
-
-# Excluir arquivos do desktop público
-$publicDesktopPath = [System.Environment]::GetFolderPath("CommonDesktopDirectory")
-Remove-Item "$publicDesktopPath\*" -Force -Recurse
+# # Excluir arquivos do desktop público
+# $publicDesktopPath = [System.Environment]::GetFolderPath("CommonDesktopDirectory")
+# Remove-Item "$publicDesktopPath\*" -Force -Recurse
 
 
 # Verifica se a pasta "Imagens" existe, se não, cria a pasta
@@ -45,11 +44,22 @@ if (-Not (Test-Path $targetFolderPath)) {
 
 # Copia a imagem para a pasta "Imagens"
 $targetImagePath = [System.IO.Path]::Combine($targetFolderPath, (Get-Item $imagePath).Name)
-Write-Host $targetImagePath
+Write-Host " caminho para o $imagePath  a pasta do final $targetImagePath"
 Copy-Item $imagePath -Destination $targetImagePath -Force
+
+Write-Host "caminho para os icones geral $iconsPathico para a pasta $targetFolderPath"
 Copy-Item $iconsPathico -Destination $targetFolderPath -Force
 
+#Copia os ícones dos programas padrões 
+$iconesGeral = ".\Desktop\*"
+Copy-Item $iconesGeral -Destination $desktopPath
+Write-Host "caminho icones geral local e destino"
+Write-Host $iconesGeral $desktopPath
+
 #Copia os ícones para a área de trabalho corrente do usuário
+
+Write-Host "caminho para os icones e desino"
+Write-Host $iconsPath $desktopPath
 Copy-Item $iconsPath -Destination $desktopPath -Force
 
 
@@ -77,11 +87,14 @@ public class Wallpaper {
 #  "Copiando o modelo padronizado do layout do menu"
 $sourceFilePath = ".\DefaultLayouts.xml"
 $destinationFolderPath = "$env:LocalAppData\Microsoft\Windows\Shell"
+Write-Host "pasta do xml $destinationFolderPath"
 
 Copy-Item -Path $sourceFilePath -Destination $destinationFolderPath
 
 $regeditPath = Join-Path $env:SystemRoot "regedit.exe"
 Start-Process $regeditPath -ArgumentList "/s  .\icon_homeuser_computer.reg"  -Wait
+Start-Process $regeditPath -ArgumentList "/s  .\regMenu.reg"  -Wait
 Start-Process $regeditPath -ArgumentList "/s  .\DefaultLayouts.reg" -Wait
 Start-Process $regeditPath -ArgumentList "/s  .\logowin10.reg" -Wait
 
+Stop-Process -Name Explorer -Force
