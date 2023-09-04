@@ -150,8 +150,8 @@ $form.Controls.Add($checkBox10)
 $progressBar = New-Object Windows.Forms.ProgressBar
 $progressBar.Location = New-Object Drawing.Point(5, 410)
 $progressBar.Size = New-Object Drawing.Size(370, 20)
-$progressBar.Minimum = 0
-$progressBar.Maximum = 1
+$progressBar.Minimum = 1
+$progressBar.Maximum = 10
 $progressBar.Step = 1  # Defina o valor do incremento
 # Adiciona a barra de progresso ao formulário
 $form.Controls.Add($progressBar)
