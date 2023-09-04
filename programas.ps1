@@ -3,7 +3,7 @@ $programList = @()
 $programList +=[PSCustomObject]@{
     programa = ".\softwares\Anydesk.exe";
     param1 = "--install";
-    param2 = "C:\Program Files (x86)\AnyDesk";
+    param2 = "`"C:\Program Files (x86)\AnyDesk`"";
     param3 = "--start-with-win";
     param4 = "--create-desktop-icon"
 }
