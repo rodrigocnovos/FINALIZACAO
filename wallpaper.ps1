@@ -67,7 +67,7 @@ Copy-Item $iconsPath -Destination $desktopPath -Force
 # Definir o valor do Registro para criar pontos de restauração a cada 1 minuto
 $regPath = "HKCU:\Control Panel\Desktop"
 $regName = "WallpaperStyle"
-$regNameValue = "6"
+$regNameValue = "2"
 
 # Definir o novo valor (1 minuto) temporariamente
 $regValueTemp = 1
