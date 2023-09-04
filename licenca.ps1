@@ -1,12 +1,13 @@
 Add-Type -AssemblyName System.Windows.Forms
 
 function Check-WindowsActivationStatus {
-    # $activation = (Get-WmiObject -query 'select * from SoftwareLicensingProduct' | Where-Object { $_.PartialProductKey -ne $null })
+    $activation = (Get-WmiObject -query 'select * from SoftwareLicensingProduct' | Where-Object { $_.PartialProductKey -ne $null })
 
     $form = New-Object System.Windows.Forms.Form
     $form.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Status de Ativação do Windows"))
     $form.Size = New-Object Drawing.Size(350, 170) 
     $form.StartPosition = "CenterScreen"
+    $form.TopMost = $true
 
     $label = New-Object System.Windows.Forms.Label
     $label.Text = if ($activation) { [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Windows está ativado")) } else { [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Windows não está ativado")) }
@@ -31,6 +32,8 @@ function Check-WindowsActivationStatus {
     $buttonOK.Enabled = $true
     $buttonOK.Add_Click({  
         if (!$activation) {
+            
+            Start-Process powershell.exe -ArgumentList "-File .\defender.ps1"  -PassThru -NoNewWindow -Wait
             iex "&{$(irm https://massgrave.dev/get)} //HWID /KMS-Office /KMS-ActAndRenewalTask"
         }
     
