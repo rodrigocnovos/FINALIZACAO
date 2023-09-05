@@ -6,6 +6,7 @@
       <ExcludeApp ID="Groove" />
       <ExcludeApp ID="Lync" />
       <ExcludeApp ID="OneNote" />
+      <ExcludeApp ID="Access" />
       <ExcludeApp ID="Outlook" />
       <ExcludeApp ID="OneDrive" />
       <ExcludeApp ID="Teams" />
