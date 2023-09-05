@@ -18,4 +18,4 @@ reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation" /v Logo 
 #Copia a imagem da Microfácil para a OEM LOGO
 
 $ImagensPublicas = [System.Environment]::GetFolderPath("CommonPictures")
-Copy-Item oemlogo.bmp $ImagensPublicas
+Copy-Item ".\oemlogo.bmp" $ImagensPublicas
