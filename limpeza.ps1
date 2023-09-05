@@ -46,5 +46,18 @@ Remove-Item $desktopPath\* -Force -Recurse
 $publicDesktopPath = [System.Environment]::GetFolderPath("CommonDesktopDirectory")
 Remove-Item "$publicDesktopPath\*" -Force -Recurse
 
+
+
+# Obter o caminho da pasta do usuário que fez login no sistema
+$userProfilePath = [System.Environment]::GetEnvironmentVariable('USERPROFILE')
+
+# Limpar a pasta de Downloads do usuário corrente
+$downloadsPath = Join-Path $userProfilePath 'Downloads'
+Remove-Item -Path $downloadsPath\* -Force -Recurse
+
+# Limpar a pasta de Documentos do usuário corrente
+$documentsPath = Join-Path $userProfilePath 'Documents'
+Remove-Item -Path $documentsPath\* -Force -Recurse
+
 Clear-Host
 Write-Host "Limpeza concluída."

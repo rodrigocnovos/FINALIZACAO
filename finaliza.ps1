@@ -19,10 +19,7 @@ $form.Controls.Add($status)
 # Variável para armazenar a contagem
 $contagem = 0
 
-# Função para atualizar a exibição da contagem
-# function AtualizarExibicao {
-#     $status.Text = "Progresso: $status"
-# }
+
 
 # Função para atualizar a contagem
 function AtualizarContagem {
@@ -59,6 +56,16 @@ $textBox.Add_TextChanged({
     }
 })
 $form.Controls.Add($textBox)
+
+# Cria uma instância da barra de progresso
+$progressBar = New-Object Windows.Forms.ProgressBar
+$progressBar.Location = New-Object Drawing.Point(5, 410)
+$progressBar.Size = New-Object Drawing.Size(370, 20)
+$progressBar.Minimum = 1
+$progressBar.Maximum = 10
+$progressBar.Step = 1  # Defina o valor do incremento
+# Adiciona a barra de progresso ao formulário
+$form.Controls.Add($progressBar)
 
 # CheckBoxes com opções
 $checkBox1 = New-Object Windows.Forms.CheckBox
@@ -145,19 +152,6 @@ $checkbox10.Add_CheckedChanged({ AtualizarContagem })
 $form.Controls.Add($checkBox10)
 
 
-
-# Cria uma instância da barra de progresso
-$progressBar = New-Object Windows.Forms.ProgressBar
-$progressBar.Location = New-Object Drawing.Point(5, 410)
-$progressBar.Size = New-Object Drawing.Size(370, 20)
-$progressBar.Minimum = 1
-$progressBar.Maximum = 10
-$progressBar.Step = 1  # Defina o valor do incremento
-# Adiciona a barra de progresso ao formulário
-$form.Controls.Add($progressBar)
-
-
-
 $buttonOK = New-Object Windows.Forms.Button
 $buttonOK.Location = New-Object Drawing.Point(80, 450)
 $buttonOK.Size = New-Object Drawing.Size(80, 30)
@@ -184,12 +178,13 @@ $tecnicoOS = $textBox.Text
             
             $exitCode = $process.ExitCode
             if ($exitCode -eq 0) {
-                Write-Host "Script concluído com êxito."
+                Write-Host "Script $text concluído com êxito."
+                
             } else {
-                Write-Host "Script falhou com código de saída $exitCode."
+                Write-Host "Script $text falhou com código de saída $exitCode."
             }
         } else {
-            Write-Host "Script não encontrado: $scriptPath"
+            Write-Host "Script $text não encontrado: $scriptPath"
         }
         
     }
