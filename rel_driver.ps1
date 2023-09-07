@@ -20,18 +20,29 @@ function OpenGoogleSearch($hardwareID) {
 # Obter todos os dispositivos sem driver
 $devicesWithoutDriver = Get-WmiObject Win32_PnPEntity | Where-Object { $_.ConfigManagerErrorCode -ne 0 }
 
+
+# Obtém informações sobre a placa de vídeo
+$videoAdapter = Get-WmiObject -Class Win32_VideoController
+
+# Verifica se o driver é genérico
+if ($videoAdapter.Description -like "Microsoft Basic Display Driver*"  -or $videoAdapter.Description -like "Adaptador de Vídeo Básico da Microsoft" ) {
+    $alertVideo =  "O driver genérico está instalado na placa de vídeo."
+} 
+
+
+
 $lastDriver = $devicesWithoutDriver.Count 
 
-
+$videoAdapter.Description
 
 
 $label = New-Object Windows.Forms.Label
-$label.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Foram encontrados $lastDriver drivers faltantes."))
+$label.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Foram encontrados $lastDriver drivers faltantes.  $alertVideo"))
 $label.Location = New-Object Drawing.Point(20, 20)
 $label.AutoSize = $true
 $form.Controls.Add($label)
 
-# $lastDriver = 1
+
 
 $buttonOK = New-Object Windows.Forms.Button
 $buttonOK.Location = New-Object Drawing.Point(100, 60)

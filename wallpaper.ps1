@@ -24,7 +24,7 @@ $iconsPath = ".\ico\*.url"
 $iconsPathico = ".\ico\*.ico"
 
 # Caminho da pasta "Imagens" no perfil no perfil púbolico
-# $targetFolderPath = [System.IO.Path]::Combine($env:USERPROFILE, "Pictures")
+# $targetFolderPath = [System.IO.Path]::combine($env:USERPROFILE, "Pictures")
 $targetFolderPath = "C:\Users\Public\Pictures"
 
 
@@ -107,11 +107,28 @@ Copy-Item -Path $sourceFilePath -Destination $destinationFolderPath
 
 $regeditPath = Join-Path $env:SystemRoot "regedit.exe"
 Start-Process $regeditPath -ArgumentList "/s  .\icon_homeuser_computer.reg"  -Wait
-Start-Process $regeditPath -ArgumentList "/s  .\regMenu.reg"  -Wait
-Start-Process $regeditPath -ArgumentList "/s  .\DefaultLayouts.reg" -Wait
-Start-Process $regeditPath -ArgumentList "/s  .\logowin10.reg" -Wait
 
 if ( $imagePath -eq ".\wallpaper\w10.jpg") {
     
-    Stop-Process -Name Explorer -Force
+    Start-Process $regeditPath -ArgumentList "/s  .\regMenu.reg"  -Wait
+    Start-Process $regeditPath -ArgumentList "/s  .\DefaultLayouts.reg" -Wait
+    Start-Process $regeditPath -ArgumentList "/s  .\logowin10.reg" -Wait
+    
 }
+if ($imagePath -eq ".\wallpaper\w11.jpg") {
+
+if (Test-Path $env:LOCALAPPDATA\Packages\Microsoft.Windows.StartMenuExperienceHost_cw5n1h2txyewy\LocalState\){
+
+    $arquivos_start = Get-ChildItem $env:LOCALAPPDATA\Packages\Microsoft.Windows.StartMenuExperienceHost_cw5n1h2txyewy\LocalState\start*
+
+    foreach ($arquivo in $arquivos_start)
+    {
+        Copy-Item ".\win11_files\start.bin" -Destination $arquivo -Force 
+        Write-Host $arquivo
+    }
+
+}
+
+}
+
+Stop-Process -Name Explorer -Force
