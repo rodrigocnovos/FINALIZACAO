@@ -1,6 +1,5 @@
 devmgmt.msc
 
-
 Add-Type -AssemblyName System.Windows.Forms
 
 $form = New-Object Windows.Forms.Form
@@ -18,22 +17,30 @@ function OpenGoogleSearch($hardwareID) {
 }
 
 # Obter todos os dispositivos sem driver
-$devicesWithoutDriver = Get-WmiObject Win32_PnPEntity | Where-Object { $_.ConfigManagerErrorCode -ne 0 }
+$devicesWithoutDriver = @(Get-WmiObject Win32_PnPEntity | Where-Object { $_.ConfigManagerErrorCode -ne 0 })
 
 
 # Obtém informações sobre a placa de vídeo
 $videoAdapter = Get-WmiObject -Class Win32_VideoController
 
+$videoAdapter
+
+$video = $videoAdapter.Description
+
+$video
+
+$video_PT = "Adaptador de Vídeo Básico da Microsoft"
+$video_EN = "Microsoft Basic Display Driver"
+
 # Verifica se o driver é genérico
-if ($videoAdapter.Description -like "Microsoft Basic Display Driver*"  -or $videoAdapter.Description -like "Adaptador de Vídeo Básico da Microsoft" ) {
+if ($video -eq $video_PT -or $video -eq $video_EN ) {
     $alertVideo =  "O driver genérico está instalado na placa de vídeo."
-} 
+    Write-Host "Vídeo básico $alertVideo"
+} else{
+    Write-Host "Diferente $video"
+}
 
-
-
-$lastDriver = $devicesWithoutDriver.Count 
-
-$videoAdapter.Description
+$lastDriver = $devicesWithoutDriver.count
 
 
 $label = New-Object Windows.Forms.Label
@@ -59,8 +66,10 @@ $buttonOK.Enabled = $true
 $buttonOK.Add_Click({  
     # Iterar pelos dispositivos sem driver
     foreach ($device in $devicesWithoutDriver) {
+        
+
         $hardwareID = $device.PNPDeviceID
-        Write-Host "Dispositivo sem driver encontrado. Hardware ID: $hardwareID"
+        # Write-Host "Dispositivo sem driver encontrado. Hardware ID: $hardwareID"
         
         
         # Abrir pesquisa no Google com o Hardware ID
