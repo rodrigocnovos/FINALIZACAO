@@ -12,7 +12,8 @@ $form.StartPosition = "CenterScreen"
 
 # Função para abrir uma pesquisa no Google com o Hardware ID
 function OpenGoogleSearch($hardwareID) {
-    $searchURL = "https://www.google.com/search?q=$hardwareID"
+    $escapedQuery = [System.Uri]::EscapeDataString($hardwareID)
+    $searchURL = "https://www.google.com/search?q=$escapedQuery"
     Start-Process $searchURL
 }
 
@@ -33,6 +34,7 @@ foreach ($videoAdapter in $videoAdapters) {
     # Verifica se o driver é genérico
     if ($descricao -eq $video_PT -or $descricao -eq $video_EN ) {
         $alertVideo =  "O driver genérico está instalado na placa de vídeo."
+        $idPlacaVideo = $videoAdapter.PNPDeviceID
     } #else{
     #     Write-Host "$video_PT é diferente de $descricao "
     # }
@@ -80,6 +82,12 @@ $buttonOK.Add_Click({
         
         # Abrir pesquisa no Google com o Hardware ID
         OpenGoogleSearch $hardwareID
+    }
+
+    if ($idPlacaVideo) {
+        OpenGoogleSearch "$idPlacaVideo"
+        # write-host $idPlacaVideo
+
     }
     
     
