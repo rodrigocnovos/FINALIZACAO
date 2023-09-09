@@ -21,33 +21,39 @@ $devicesWithoutDriver = @(Get-WmiObject Win32_PnPEntity | Where-Object { $_.Conf
 
 
 # Obtém informações sobre a placa de vídeo
-$videoAdapter = Get-WmiObject -Class Win32_VideoController
+$videoAdapters = @(Get-WmiObject -Class Win32_VideoController)
 
-$videoAdapter
 
-$video = $videoAdapter.Description
 
-$video
-
-$video_PT = "Adaptador de Vídeo Básico da Microsoft"
-$video_EN = "Microsoft Basic Display Driver"
-
-# Verifica se o driver é genérico
-if ($video -eq $video_PT -or $video -eq $video_EN ) {
-    $alertVideo =  "O driver genérico está instalado na placa de vídeo."
-    Write-Host "Vídeo básico $alertVideo"
-} else{
-    Write-Host "Diferente $video"
+foreach ($videoAdapter in $videoAdapters) {
+    
+    $video_PT = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Adaptador de Vídeo Básico da Microsoft"))
+    $video_EN = "Microsoft Basic Display Driver"
+    $descricao = $videoAdapter.Description
+    # Verifica se o driver é genérico
+    if ($descricao -eq $video_PT -or $descricao -eq $video_EN ) {
+        $alertVideo =  "O driver genérico está instalado na placa de vídeo."
+    } #else{
+    #     Write-Host "$video_PT é diferente de $descricao "
+    # }
 }
+
+
 
 $lastDriver = $devicesWithoutDriver.count
 
 
 $label = New-Object Windows.Forms.Label
-$label.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Foram encontrados $lastDriver drivers faltantes.  $alertVideo"))
+$label.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Foram encontrados $lastDriver drivers faltantes."))
 $label.Location = New-Object Drawing.Point(20, 20)
 $label.AutoSize = $true
 $form.Controls.Add($label)
+
+$labe2 = New-Object Windows.Forms.Label
+$labe2.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("$alertVideo"))
+$labe2.Location = New-Object Drawing.Point(20, 40)
+$labe2.AutoSize = $true
+$form.Controls.Add($labe2)
 
 
 
