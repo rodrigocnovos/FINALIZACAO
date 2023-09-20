@@ -6,7 +6,7 @@
 # Start-Process msedge.exe -ArgumentList "--clear-activities"
 
 # Limpar histórico de pesquisa no Explorador de Arquivos
-Clear-RecycleBin -Force
+Clear-RecycleBin -Force 2>$null
 Remove-Item "$env:USERPROFILE\AppData\Local\Microsoft\Windows\Explorer\thumbcache_*" -Force -ErrorAction SilentlyContinue 2>$null  
 
 # Limpar cache de aplicativos do Windows
