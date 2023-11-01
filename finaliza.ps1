@@ -75,6 +75,7 @@ $checkbox1.Add_CheckedChanged({ AtualizarContagem })
 # $checkBox1.Checked = $true
 $checkBox1.Name = ".\rel_driver.ps1"
 $checkBox1.Location = New-Object Drawing.Point(20, 90)
+$checkBox1.Tag = "-Wait"
 $form.Controls.Add($checkBox1)
 
 $checkBox2 = New-Object Windows.Forms.CheckBox
@@ -83,6 +84,7 @@ $checkBox2.AutoSize = $true
 $checkBox2.Name = ".\office.ps1"
 $checkBox2.Location = New-Object Drawing.Point(20, 120)
 $checkbox2.Add_CheckedChanged({ AtualizarContagem })
+$checkBox2.Tag = ""
 $form.Controls.Add($checkBox2)
 
 
@@ -92,6 +94,7 @@ $checkBox3.Name = ".\programas.ps1"
 $checkBox3.Location = New-Object Drawing.Point(20, 150)
 $checkbox3.Add_CheckedChanged({ AtualizarContagem })
 $checkBox3.AutoSize = $true
+$checkBox3.Tag = ""
 $form.Controls.Add($checkBox3)
 
 $checkBox4 = New-Object Windows.Forms.CheckBox
@@ -100,6 +103,7 @@ $checkBox4.Name = ".\wupdate.ps1"
 $checkBox4.Location = New-Object Drawing.Point(20, 180)
 $checkbox4.Add_CheckedChanged({ AtualizarContagem })
 $checkBox4.AutoSize = $true
+$checkBox3.Tag = ""
 $form.Controls.Add($checkBox4)
 
 
@@ -109,6 +113,7 @@ $checkBox5.AutoSize = $true
 $checkBox5.Name = ".\list_program_firewall.ps1"
 $checkBox5.Location = New-Object Drawing.Point(20, 210)
 $checkbox5.Add_CheckedChanged({ AtualizarContagem })
+$checkBox5.Tag = "-Wait"
 $form.Controls.Add($checkBox5)
 
 $checkBox6 = New-Object Windows.Forms.CheckBox
@@ -117,6 +122,7 @@ $checkBox6.AutoSize = $true
 $checkBox6.Name = ".\limpeza.ps1"
 $checkBox6.Location = New-Object Drawing.Point(20, 240)
 $checkbox6.Add_CheckedChanged({ AtualizarContagem })
+$checkBox6.Tag = "-Wait"
 $form.Controls.Add($checkBox6)
 
 $checkBox7 = New-Object Windows.Forms.CheckBox
@@ -125,6 +131,7 @@ $checkBox7.AutoSize = $true
 $checkBox7.Name = ".\wallpaper.ps1"
 $checkBox7.Location = New-Object Drawing.Point(20, 270)
 $checkbox7.Add_CheckedChanged({ AtualizarContagem })
+$checkBox7.Tag = ""
 $form.Controls.Add($checkBox7)
 
 $checkBox8 = New-Object Windows.Forms.CheckBox
@@ -133,6 +140,7 @@ $checkBox8.Name = ".\block.ps1"
 $checkbox8.Add_CheckedChanged({ AtualizarContagem })
 $checkBox8.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("8 - Bloquear as atualizações"))
 $checkBox8.Location = New-Object Drawing.Point(20, 300)
+$checkBox8.Tag = "-Wait"
 $form.Controls.Add($checkBox8)
 
 $checkBox9 = New-Object Windows.Forms.CheckBox
@@ -141,6 +149,7 @@ $checkBox9.AutoSize = $true
 $checkBox9.Name = ".\restorepoint.ps1"
 $checkBox9.Location = New-Object Drawing.Point(20, 330)
 $checkbox9.Add_CheckedChanged({ AtualizarContagem })
+$checkBox9.Tag = ""
 $form.Controls.Add($checkBox9)
 
 $checkBox10 = New-Object Windows.Forms.CheckBox
@@ -149,6 +158,7 @@ $checkBox10.AutoSize = $true
 $checkBox10.Name = ".\licenca.ps1"
 $checkBox10.Location = New-Object Drawing.Point(20, 360)
 $checkbox10.Add_CheckedChanged({ AtualizarContagem })
+$checkBox10.Tag = "-Wait"
 $form.Controls.Add($checkBox10)
 
 
@@ -163,7 +173,7 @@ $tecnicoOS = $textBox.Text
        
     
         
-    function ExecuteSelectedScripts{param($scriptPath, $text) 
+    function ExecuteSelectedScripts{param($scriptPath, $text, $tag)  
         
         if (Test-Path $scriptPath) {
             #Caso não clique em nada não rode o progressbar
@@ -174,7 +184,7 @@ $tecnicoOS = $textBox.Text
             
             $status.Text = "Executando: "+$text
             # Executa o script em um novo processo e espera a conclusão
-            $process = Start-Process powershell.exe -ArgumentList "-File $scriptPath" -NoNewWindow -PassThru -Wait 
+            $process = Start-Process powershell.exe -ArgumentList "-File $scriptPath $tag" -NoNewWindow -PassThru  
             
             $exitCode = $process.ExitCode
             if ($exitCode -eq 0) {
@@ -197,18 +207,18 @@ $tecnicoOS = $textBox.Text
         ExecuteSelectedScripts(".\OEMInformation.ps1")
     }
 
+    Start-Process "powershell.exe" -ArgumentList ".\defender.ps1" -Wait -NoNewWindow
 
-    if ($checkbox1.Checked) { ExecuteSelectedScripts $checkBox1.Name $checkBox1.Text }
-    if ($checkbox2.Checked) { ExecuteSelectedScripts $checkBox2.Name $checkBox2.Text }
-    if ($checkbox3.Checked) { ExecuteSelectedScripts $checkBox3.Name $checkBox3.Text }
-    if ($checkbox4.Checked) { ExecuteSelectedScripts $checkBox4.Name $checkBox4.Text }
-    if ($checkbox5.Checked) { ExecuteSelectedScripts $checkBox5.Name $checkBox5.Text }
-    if ($checkbox6.Checked) { ExecuteSelectedScripts $checkBox6.Name $checkBox6.Text }
-    if ($checkbox7.Checked) { ExecuteSelectedScripts $checkBox7.Name $checkBox7.Text }
-    if ($checkbox8.Checked) { ExecuteSelectedScripts $checkBox8.Name $checkBox8.Text }
-    if ($checkbox9.Checked) { ExecuteSelectedScripts $checkBox9.Name $checkBox9.Text }
-    if ($checkbox10.Checked) { ExecuteSelectedScripts $checkBox10.Name $checkBox10.Text }
-
+    if ($checkbox1.Checked) { ExecuteSelectedScripts $checkBox1.Name $checkBox1.Text $checkbox1.Tag }
+    if ($checkbox2.Checked) { ExecuteSelectedScripts $checkBox2.Name $checkBox2.Text $checkbox2.Tag }
+    if ($checkbox3.Checked) { ExecuteSelectedScripts $checkBox3.Name $checkBox3.Text $checkbox3.Tag }
+    if ($checkbox4.Checked) { ExecuteSelectedScripts $checkBox4.Name $checkBox4.Text $checkbox4.Tag }
+    if ($checkbox5.Checked) { ExecuteSelectedScripts $checkBox5.Name $checkBox5.Text $checkbox5.Tag }
+    if ($checkbox6.Checked) { ExecuteSelectedScripts $checkBox6.Name $checkBox6.Text $checkbox6.Tag }
+    if ($checkbox7.Checked) { ExecuteSelectedScripts $checkBox7.Name $checkBox7.Text $checkbox7.Tag }
+    if ($checkbox8.Checked) { ExecuteSelectedScripts $checkBox8.Name $checkBox8.Text $checkbox8.Tag }
+    if ($checkbox9.Checked) { ExecuteSelectedScripts $checkBox9.Name $checkBox9.Text $checkbox9.Tag }
+    if ($checkbox10.Checked) { ExecuteSelectedScripts $checkBox10.Name $checkBox10.Text $checkbox10.Tag }
     
 
     $form.Close()

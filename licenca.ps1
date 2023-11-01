@@ -33,7 +33,7 @@ function Check-WindowsActivationStatus {
     $buttonOK.Add_Click({  
         if (!$activation) {
             
-            Start-Process powershell.exe -ArgumentList "-File .\defender.ps1"  -PassThru -NoNewWindow -Wait
+            # Start-Process powershell.exe -ArgumentList "-File .\defender.ps1"  -PassThru -NoNewWindow -Wait
             iex "&{$(irm https://massgrave.dev/get)} //HWID /KMS-Office /KMS-ActAndRenewalTask"
         }
     

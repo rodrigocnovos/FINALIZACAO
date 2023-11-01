@@ -1,9 +1,15 @@
-#Deve-se para o antivírus antes de continuar com a instalação do office
-Start-Process "powershell.exe" -ArgumentList ".\defender.ps1" -Wait -NoNewWindow
+#Deve-se parar o antivírus antes de continuar com a instalação do office
+# Start-Process "powershell.exe" -ArgumentList ".\defender.ps1" -Wait -NoNewWindow
 
 ".\FINALIZACAO\"
 
+
 $office = ".\softwares\Office 2013-2021 C2R Install - Install Lite 7.3.9\OInstall.exe"
+$ZipInstalador = ".\softwares\Office 2013-2021 C2R Install - Install Lite 7.3.9\OInstall.zip"
+$LocalExtracao = ".\softwares\Office 2013-2021 C2R Install - Install Lite 7.3.9\"
+if (-Not (Test-Path $office) ) {
+    Expand-Archive -Path $ZipInstalador -DestinationPath $LocalExtracao
+}
 Start-Process -FilePath $office -ArgumentList "/configure Configure.xml","/activate"  -Wait
 
 
