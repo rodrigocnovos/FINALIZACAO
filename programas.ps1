@@ -30,7 +30,7 @@ foreach ($program in $programList) {
     }
 }
 
-$process_instala = Start-Process -FilePath powershell.exe -ArgumentList ".\softwares\ninite.exe"
+$process_instala = Start-Process -FilePath powershell.exe -ArgumentList ".\softwares\ninite.exe" -NoNewWindow
 $process_instala.WaitForExit()
 
 $informacoesDoProcesso = Get-Process -Id $process_instala.Id
