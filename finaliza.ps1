@@ -103,7 +103,7 @@ $checkBox4.Name = ".\wupdate.ps1"
 $checkBox4.Location = New-Object Drawing.Point(20, 180)
 $checkbox4.Add_CheckedChanged({ AtualizarContagem })
 $checkBox4.AutoSize = $true
-$checkBox3.Tag = ""
+$checkBox4.Tag = ""
 $form.Controls.Add($checkBox4)
 
 
@@ -184,7 +184,10 @@ $tecnicoOS = $textBox.Text
             
             $status.Text = "Executando: "+$text
             # Executa o script em um novo processo e espera a conclusão
-            $process = Start-Process powershell.exe -ArgumentList "-File $scriptPath $tag" -NoNewWindow -PassThru  
+            $process = Start-Process powershell.exe -ArgumentList "-File $scriptPath" -NoNewWindow -PassThru 
+            if (-not [string]::IsNullOrEmpty($tag)) {
+                $process.WaitForExit()
+            }
             
             $exitCode = $process.ExitCode
             if ($exitCode -eq 0) {

@@ -30,5 +30,11 @@ foreach ($program in $programList) {
     }
 }
 
-powershell.exe .\softwares\ninite.exe 
-# powershell.exe .\softwares\AnyDesk.exe --install --start-with-win --create-desktop-icon
+$process_instala = Start-Process -FilePath powershell.exe -ArgumentList ".\softwares\ninite.exe"
+$process_instala.WaitForExit()
+
+$informacoesDoProcesso = Get-Process -Id $process_instala.Id
+               
+if (Get-Process -Id $process_instala.Id -ErrorAction SilentlyContinue) {
+    Stop-Process -Name $process_instala -Force 
+}

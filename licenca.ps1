@@ -35,6 +35,9 @@ function Check-WindowsActivationStatus {
             
             # Start-Process powershell.exe -ArgumentList "-File .\defender.ps1"  -PassThru -NoNewWindow -Wait
             iex "&{$(irm https://massgrave.dev/get)} //HWID /KMS-Office /KMS-ActAndRenewalTask"
+            if ($? -eq $false) {
+                irm https://massgrave.dev/get | iex
+            }
         }
     
     
