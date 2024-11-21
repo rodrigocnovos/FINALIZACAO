@@ -1,10 +1,12 @@
 Unblock-File *
 
+Start-Process powershell.exe -ArgumentList "-File update_script.ps1" -NoNewWindow -PassThru
+
 Add-Type -AssemblyName System.Windows.Forms
 
 $form = New-Object Windows.Forms.Form
 $form.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Microfácil Finalização - V2.11 Por Rodrigo Silveira"))
-$form.Size = New-Object Drawing.Size(460, 640)
+$form.Size = New-Object Drawing.Size(460, 655)
 $form.StartPosition = "CenterScreen"
 
 
