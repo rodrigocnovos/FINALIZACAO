@@ -1,89 +1,92 @@
+# Função para verificar atalhos quebrados e duplicados no desktop
+function Verificar-AtalhosQuebradosEDuplicados {
+    # Caminho do desktop do usuário atual
+    $desktopPath = [Environment]::GetFolderPath("Desktop")
+
+    # Filtrar atalhos (.lnk)
+    $shortcuts = Get-ChildItem -Path $desktopPath -Filter "*.lnk"
+
+    # Lista para armazenar atalhos quebrados e duplicados
+    $atalhosQuebrados = @()
+    $atalhosDestino = @{}  # Dicionário para armazenar destinos e verificar duplicidade
+    $atalhosParaRemover = @()  # Lista de atalhos a serem removidos
+
+    # Verificar cada atalho
+    foreach ($shortcut in $shortcuts) {
+        $shell = New-Object -ComObject WScript.Shell
+        $shortcutPath = $shortcut.FullName
+        $targetPath = $shell.CreateShortcut($shortcutPath).TargetPath
+
+        # Verificar se o atalho é quebrado
+        if (-not (Test-Path $targetPath)) {
+            $atalhosQuebrados += [PSCustomObject]@{
+                Atalho = $shortcutPath
+                Destino = $targetPath
+                Tipo = "Quebrado"
+            }
+        } else {
+            # Verificar duplicidade de destino
+            if ($atalhosDestino.ContainsKey($targetPath)) {
+                $atalhosQuebrados += [PSCustomObject]@{
+                    Atalho = $shortcutPath
+                    Destino = $targetPath
+                    Tipo = "Duplicado"
+                }
+                # Adicionar o atalho duplicado para remoção
+                $atalhosParaRemover += $shortcutPath
+            } else {
+                $atalhosDestino[$targetPath] = $shortcutPath
+            }
+        }
+    }
+
+    # Retorna a lista de atalhos quebrados ou duplicados e os atalhos para remoção
+    return [PSCustomObject]@{
+        AtalhosQuebrados = $atalhosQuebrados
+        AtalhosParaRemover = $atalhosParaRemover
+    }
+}
+
+# Parte principal do script
+# Configurar papel de parede, copiar ícones, etc.
 $osInfo = Get-CimInstance -ClassName Win32_OperatingSystem
 
 if ($osInfo.Caption -like "*Windows 7*") {
-    # Caminho completo da imagem que você deseja definir como papel de parede
-    $imagePath = ".\wallpaper\w7.jpg"    
+    $imagePath = ".\wallpaper\w7.jpg"
 }
 elseif ($osInfo.Caption -like "*Windows 8*") {
-    # Caminho completo da imagem que você deseja definir como papel de parede
     $imagePath = ".\wallpaper\w8.jpg"
 }
 elseif ($osInfo.Caption -like "*Windows 10*") {
-    # Caminho completo da imagem que você deseja definir como papel de parede
     $imagePath = ".\wallpaper\w10.jpg"
 }
 elseif ($osInfo.Caption -like "*Windows 11*") {
-    # Caminho completo da imagem que você deseja definir como papel de parede
     $imagePath = ".\wallpaper\w11.jpg"
-    
 }
 
 Write-Host $imagePath
-#Caminho dos ícones
+
+# Caminho dos ícones
 $iconsPath = ".\ico\*.url"
 $iconsPathico = ".\ico\*.ico"
-
-# Caminho da pasta "Imagens" no perfil no perfil púbolico
-# $targetFolderPath = [System.IO.Path]::combine($env:USERPROFILE, "Pictures")
-$targetFolderPath = "C:\Users\Public\Pictures"
-
-
-# #Caminho para o desktop do usuário corrente
 $desktopPath = [Environment]::GetFolderPath("Desktop")
-# Remove-Item $desktopPath\* -Force -Recurse
 
-# # Excluir arquivos do desktop público
-# $publicDesktopPath = [System.Environment]::GetFolderPath("CommonDesktopDirectory")
-# Remove-Item "$publicDesktopPath\*" -Force -Recurse
-
-
-# Verifica se a pasta "Imagens" existe, se não, cria a pasta
+# Copiar imagens e ícones
+$targetFolderPath = "C:\Users\Public\Pictures"
 if (-Not (Test-Path $targetFolderPath)) {
     New-Item -ItemType Directory -Path $targetFolderPath | Out-Null
 }
-
-# Copia a imagem para a pasta "Imagens"
 $targetImagePath = [System.IO.Path]::Combine($targetFolderPath, (Get-Item $imagePath).Name)
-Write-Host " caminho para o $imagePath  a pasta do final $targetImagePath"
 Copy-Item $imagePath -Destination $targetImagePath -Force
-
-Write-Host "caminho para os icones geral $iconsPathico para a pasta $targetFolderPath"
 Copy-Item $iconsPathico -Destination $targetFolderPath -Force
-
-#Copia os ícones dos programas padrões 
 $iconesGeral = ".\Desktop\*"
 Copy-Item $iconesGeral -Destination $desktopPath
-Write-Host "caminho icones geral local e destino"
-Write-Host $iconesGeral $desktopPath
-
-#Copia os ícones para a área de trabalho corrente do usuário
-
-Write-Host "caminho para os icones e desino"
-Write-Host $iconsPath $desktopPath
 Copy-Item $iconsPath -Destination $desktopPath -Force
 
-
-
-# Definir o valor do Registro para criar pontos de restauração a cada 1 minuto
-$regPath = "HKCU:\Control Panel\Desktop"
-$regName = "WallpaperStyle"
-$regNameValue = "2"
-
-# Definir o novo valor (1 minuto) temporariamente
-$regValueTemp = 1
-
-# Definir o novo valor temporariamente
-Set-ItemProperty -Path $regPath -Name $regName -Value $regNameValue
-
-
-
-
-# Define a nova imagem como papel de parede
+# Definir papel de parede
 $SPI_SETDESKWALLPAPER = 0x0014
 $SPIF_UPDATEINIFILE = 0x01
 $SPIF_SENDCHANGE = 0x02
-
-# Importa a função necessária da DLL do Windows
 Add-Type -TypeDefinition @"
 using System;
 using System.Runtime.InteropServices;
@@ -92,43 +95,37 @@ public class Wallpaper {
     public static extern int SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
 }
 "@
-
-# Chama a função para definir o papel de parede
 [Wallpaper]::SystemParametersInfo($SPI_SETDESKWALLPAPER, 0, $targetImagePath, $SPIF_UPDATEINIFILE -bor $SPIF_SENDCHANGE)
 
+# Verificar atalhos quebrados e duplicados
+$resultado = Verificar-AtalhosQuebradosEDuplicados
 
+# Exibir alerta se houver atalhos quebrados ou duplicados
+if ($resultado.AtalhosQuebrados.Count -gt 0) {
+    $mensagem = "Os seguintes atalhos quebrados: `n`n"
+    foreach ($atalho in $resultado.AtalhosQuebrados) {
+        $mensagem += "$($atalho.Tipo): $($atalho.Atalho) -> Destino: $($atalho.Destino)`n`n"
+    }
+    Add-Type -AssemblyName PresentationCore, PresentationFramework
+    [System.Windows.MessageBox]::Show($mensagem, "Atalhos Quebrados ou Duplicados", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Warning)
+} else {
+    Write-Host "Nenhum atalho quebrado ou duplicado encontrado."
+}
 
-#  "Copiando o modelo padronizado do layout do menu"
+# Remover atalhos duplicados
+if ($resultado.AtalhosParaRemover.Count -gt 0) {
+    foreach ($atalho in $resultado.AtalhosParaRemover) {
+        Write-Host "Removendo atalho duplicado: $atalho"
+        Remove-Item -Path $atalho -Force
+    }
+} else {
+    Write-Host "Nenhum atalho duplicado encontrado para remoção."
+}
+
+# Continuar com o restante do script, como aplicação de configurações no registro
 $sourceFilePath = ".\DefaultLayouts.xml"
 $destinationFolderPath = "$env:LocalAppData\Microsoft\Windows\Shell"
-Write-Host "pasta do xml $destinationFolderPath"
-
 Copy-Item -Path $sourceFilePath -Destination $destinationFolderPath
 
-$regeditPath = Join-Path $env:SystemRoot "regedit.exe"
-Start-Process $regeditPath -ArgumentList "/s  .\icon_homeuser_computer.reg"  -Wait
 
-if ( $imagePath -eq ".\wallpaper\w10.jpg") {
-    
-    Start-Process $regeditPath -ArgumentList "/s  .\regMenu.reg"  -Wait
-    Start-Process $regeditPath -ArgumentList "/s  .\DefaultLayouts.reg" -Wait
-    Start-Process $regeditPath -ArgumentList "/s  .\logowin10.reg" -Wait
-    
-}
-if ($imagePath -eq ".\wallpaper\w11.jpg") {
-
-if (Test-Path $env:LOCALAPPDATA\Packages\Microsoft.Windows.StartMenuExperienceHost_cw5n1h2txyewy\LocalState\){
-
-    $arquivos_start = Get-ChildItem $env:LOCALAPPDATA\Packages\Microsoft.Windows.StartMenuExperienceHost_cw5n1h2txyewy\LocalState\start*
-
-    foreach ($arquivo in $arquivos_start)
-    {
-        Copy-Item ".\win11_files\start.bin" -Destination $arquivo -Force 
-        Write-Host $arquivo
-    }
-
-}
-
-}
-
-Stop-Process -Name Explorer -Force
+Remove-Item -Path C:\Users\Public\Desktop\*  -Force
