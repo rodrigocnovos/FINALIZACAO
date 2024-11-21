@@ -39,8 +39,8 @@ function Check-RemoteChanges {
 
 # Função para exibir uma janela perguntando sobre a atualização
 function Ask-ForUpdate {
-    $message = "Seu repositório local está desatualizado. Gostaria de atualizar?"
-    $caption = "Atualizar Repositório"
+    $message = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Seu repositório local está desatualizado. Gostaria de atualizar?"))
+    $caption = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Atualizar Repositório"))
 
     $result = [System.Windows.Forms.MessageBox]::Show($message, $caption, [System.Windows.Forms.MessageBoxButtons]::YesNo)
     
@@ -57,7 +57,7 @@ function Perform-Pull {
 
     try {
         git pull origin
-        [System.Windows.Forms.MessageBox]::Show("Repositório atualizado com sucesso!", "Sucesso")
+        [System.Windows.Forms.MessageBox]::Show([System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Repositório atualizado com sucesso!")), "Sucesso")
     } catch {
         Write-Output "Erro ao atualizar o repositório: $($_.Exception.Message)"
         [System.Windows.Forms.MessageBox]::Show("Erro ao atualizar o repositório.", "Erro")
@@ -71,22 +71,22 @@ $status = Check-RemoteChanges
 
 switch ($status) {
     "updated" {
-        [System.Windows.Forms.MessageBox]::Show("Seu repositório local já está atualizado.", "Sem Atualização")
+        [System.Windows.Forms.MessageBox]::Show([System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Seu repositório local já está atualizado.")), "Sem Atualização")
     }
     "behind" {
         if (Ask-ForUpdate) {
             Perform-Pull
         } else {
-            [System.Windows.Forms.MessageBox]::Show("Você optou por não atualizar.", "Sem Atualização")
+            [System.Windows.Forms.MessageBox]::Show([System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Você optou por não atualizar.")), "Sem Atualização")
         }
     }
     "ahead" {
-        [System.Windows.Forms.MessageBox]::Show("Seu repositório local está à frente do remoto. Faça um push manual.", "Atenção")
+        [System.Windows.Forms.MessageBox]::Show([System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Seu repositório local está à frente do remoto. Faça um push manual.")), [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Atenção")))
     }
     "diverged" {
-        [System.Windows.Forms.MessageBox]::Show("Seu repositório local e remoto divergiram. Resolva os conflitos manualmente.", "Conflitos")
+        [System.Windows.Forms.MessageBox]::Show([System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Seu repositório local e remoto divergiram. Resolva os conflitos manualmente.")), "Conflitos")
     }
     "error" {
-        [System.Windows.Forms.MessageBox]::Show("Não foi possível verificar o status do repositório.", "Erro")
+        [System.Windows.Forms.MessageBox]::Show([System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Não foi possível verificar o status do repositório.")), "Erro")
     }
 }
