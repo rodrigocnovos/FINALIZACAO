@@ -157,4 +157,19 @@ $buttonCancel.Text = "Cancelar"
 $buttonCancel.Add_Click({ $form.Close() })
 $form.Controls.Add($buttonCancel)
 
+# Botão update
+$buttonUpdate = New-Object Windows.Forms.Button
+$buttonUpdate.Location = New-Object Drawing.Point(300, $buttonY)
+$buttonUpdate.Size = New-Object Drawing.Size(80, 30)
+$buttonUpdate.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Checar atualizações?"))
+$buttonUpdate.AutoSize = $true
+$buttonUpdate.Add_Click({ 
+    Start-Process powershell.exe -ArgumentList "-File update_script.ps1" -NoNewWindow -PassThru
+    
+    # $form.Close()
+     })
+$form.Controls.Add($buttonUpdate)
+
+
+
 $form.ShowDialog()
