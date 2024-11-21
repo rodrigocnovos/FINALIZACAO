@@ -39,6 +39,8 @@ function UpdateRepo {
         } else {
             # Caso o repositório já exista, fazer pull
             Write-Output "Repositório local encontrado. Atualizando..."
+            
+            # Fazer o fetch para garantir que as referências remotas sejam atualizadas
             & $gitExecutable fetch origin
 
             # Obter o commit remoto mais recente
@@ -48,8 +50,8 @@ function UpdateRepo {
                 return
             }
 
-            # Obter o commit local mais recente
-            $localCommit = & $gitExecutable rev-parse HEAD
+            # Obter o commit local mais recente a partir da referência remota (origin/main)
+            $localCommit = & $gitExecutable rev-parse origin/$branch
 
             # Comparar o commit local com o remoto
             if ($localCommit -ne $remoteCommit["sha"]) {
