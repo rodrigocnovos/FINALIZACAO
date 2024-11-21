@@ -53,6 +53,10 @@ function UpdateRepo {
             # Obter o commit local mais recente a partir da referência remota (origin/main)
             $localCommit = & $gitExecutable rev-parse origin/$branch
 
+            # Exibir os hashes para debug
+            Write-Output "Hash do commit local: $localCommit"
+            Write-Output "Hash do commit remoto: $($remoteCommit["sha"])"
+
             # Comparar o commit local com o remoto
             if ($localCommit -ne $remoteCommit["sha"]) {
                 Write-Output "O repositório remoto tem uma versão mais recente. Realizando git pull..."
