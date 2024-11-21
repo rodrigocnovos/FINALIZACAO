@@ -16,7 +16,7 @@ $options = @(
         # Enable-WindowsOptionalFeature -Online -FeatureName SMB1Protocol -All -NoRestart
 
     }},
-    @{ Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Abrir pelo navegador de arquivos do windows")); Action = {
+    @{ Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Abrir pelo navegador de arquivos do Windows/Rede Assistência")); Action = {
         Write-Host "abrir no explorador de arquivos"
         explorer \\172.20.0.42
     }}
