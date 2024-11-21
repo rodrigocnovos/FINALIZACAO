@@ -71,13 +71,13 @@ $status = Check-RemoteChanges
 
 switch ($status) {
     "updated" {
-        [System.Windows.Forms.MessageBox]::Show([System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Seu repositório local já está atualizado.")), "Sem Atualização")
+        [System.Windows.Forms.MessageBox]::Show([System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Seu repositório local já está atualizado.")), [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Sem Atualização")))
     }
     "behind" {
         if (Ask-ForUpdate) {
             Perform-Pull
         } else {
-            [System.Windows.Forms.MessageBox]::Show([System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Você optou por não atualizar.")), "Sem Atualização")
+            [System.Windows.Forms.MessageBox]::Show([System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Você optou por não atualizar.")), [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Sem Atualização")))
         }
     }
     "ahead" {
