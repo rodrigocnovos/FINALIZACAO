@@ -67,13 +67,13 @@ function UpdateRepo {
         }
 
         [System.Windows.Forms.MessageBox]::Show(
-            "Repositório local atualizado com sucesso.",
-            "Atualização Concluída"
+            [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::Default.GetBytes("Repositório local atualizado com sucesso.")),
+            [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::Default.GetBytes("Atualização Concluída"))
         )
     } catch {
         Write-Output "Erro ao atualizar o repositório: $($_.Exception.Message)"
         [System.Windows.Forms.MessageBox]::Show(
-            "Erro ao atualizar o repositório.",
+            [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::Default.GetBytes("Erro ao atualizar o repositório.")),
             "Erro"
         )
     } finally {
@@ -85,7 +85,7 @@ function UpdateRepo {
 $remoteCommit = Get-RemoteCommit
 if (-not $remoteCommit) {
     [System.Windows.Forms.MessageBox]::Show(
-        "Não foi possível obter o status remoto.",
+        [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::Default.GetBytes("Não foi possível obter o status remoto.")),
         "Erro"
     )
     return
