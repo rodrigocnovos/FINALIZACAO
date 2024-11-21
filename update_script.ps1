@@ -50,9 +50,8 @@ function UpdateRepo {
                 return
             }
 
-            # Obter o commit local mais recente a partir da referência remota (origin/main)
-            $localCommit = & $gitExecutable rev-parse origin/$branch
-
+            # Obter o commit local mais recente a partir do git log (diretamente do repositório local)
+            $localCommit = & $gitExecutable rev-parse HEAD
             # Exibir os hashes para debug
             Write-Output "Hash do commit local: $localCommit"
             Write-Output "Hash do commit remoto: $($remoteCommit["sha"])"
@@ -101,15 +100,36 @@ $commitMessage = [System.Text.Encoding]::GetEncoding("ISO-8859-1").GetString([Sy
 $formattedMessage = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::Default.GetBytes("Foi detectado um commit remoto mais recente.`n`n Último commit:`n$commitMessage`n`nDeseja atualizar seu repositório local?"))
 $caption = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::Default.GetBytes("Atualizar Repositório"))
 
-# Exibir a caixa de diálogo para o usuário confirmar
-$result = [System.Windows.Forms.MessageBox]::Show($formattedMessage, $caption, [System.Windows.Forms.MessageBoxButtons]::YesNo)
+# Obter o commit local diretamente
+$localCommit =  & $gitExecutable rev-parse HEAD
+# $localCommit = git  rev-parse HEAD
 
-# Perguntar ao usuário se deseja atualizar
-if ($result -eq [System.Windows.Forms.DialogResult]::Yes) {
-    UpdateRepo
+
+Write-Output "saida local "$localCommit "fim "
+Write-Output "saida remota "$remoteCommit["sha"] "fim "
+
+
+# Comparar os commits antes de perguntar ao usuário
+if ($remoteCommit["sha"] -ne $localCommit) {
+    Write-Output "remoto " $remoteCommit["sha"]
+    Write-Output "local " $localCommit
+    # Exibir a caixa de diálogo para o usuário confirmar
+    $result = [System.Windows.Forms.MessageBox]::Show($formattedMessage, $caption, [System.Windows.Forms.MessageBoxButtons]::YesNo)
+
+    # Perguntar ao usuário se deseja atualizar
+    if ($result -eq [System.Windows.Forms.DialogResult]::Yes) {
+        UpdateRepo
+    } else {
+        [System.Windows.Forms.MessageBox]::Show(
+            [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::Default.GetBytes("Atualização cancelada pelo usuário.")),
+            [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::Default.GetBytes("Cancelado"))
+        )
+    }
 } else {
+    Write-Output "O repositório local já está atualizado com o remoto."
     [System.Windows.Forms.MessageBox]::Show(
-        [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::Default.GetBytes("Atualização cancelada pelo usuário.")),
-        [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::Default.GetBytes("Cancelado"))
-    )
+            [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::Default.GetBytes("Script na última versão")),
+            [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::Default.GetBytes("Atualização"))
+        )
+
 }
