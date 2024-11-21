@@ -29,7 +29,14 @@ $options = @(
     @{ Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Corrigir erro de impressão 0x0000011b (Impressão de rede)")); Action = {
         Write-Host "Executando fix para erro 0x0000011b..."
         reg add "HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Print" /v "RpcAuthnLevelPrivacyEnabled" /t REG_DWORD /d 0 /f
+    }},
+    @{ Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Executar o Massgrave -> irm https://get.activated.win | iex")); Action = {
+        Write-Host "Executando fix para erro 0x0000011b..."
+        irm https://get.activated.win | iex
     }}
+
+
+    
 )
 
 # Criar caixas de seleção dinamicamente

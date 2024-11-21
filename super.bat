@@ -1,4 +1,4 @@
 
 
 @echo "Iniciando"
-PowerShell.exe -ExecutionPolicy Unrestricted -File finaliza.ps1
+PowerShell.exe -ExecutionPolicy Unrestricted -File ENDER.ps1
