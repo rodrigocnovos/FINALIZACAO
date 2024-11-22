@@ -105,14 +105,13 @@ $localCommit =  & $gitExecutable rev-parse HEAD
 # $localCommit = git  rev-parse HEAD
 
 
-Write-Output "saida local "$localCommit "fim "
-Write-Output "saida remota "$remoteCommit["sha"] "fim "
+Write-Output "LOCAL "$localCommit
+Write-Output "REMOTO "$remoteCommit["sha"] 
 
 
 # Comparar os commits antes de perguntar ao usuário
 if ($remoteCommit["sha"] -ne $localCommit) {
-    Write-Output "remoto " $remoteCommit["sha"]
-    Write-Output "local " $localCommit
+    
     # Exibir a caixa de diálogo para o usuário confirmar
     $result = [System.Windows.Forms.MessageBox]::Show($formattedMessage, $caption, [System.Windows.Forms.MessageBoxButtons]::YesNo)
 
