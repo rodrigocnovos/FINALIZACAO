@@ -59,6 +59,9 @@ function UpdateRepo {
             # Comparar o commit local com o remoto
             if ($localCommit -ne $remoteCommit["sha"]) {
                 Write-Output "O repositório remoto tem uma versão mais recente. Realizando git pull..."
+                # Ajustando as permissoes
+                & $gitExecutable config --global --add safe.directory *
+                
                 # Realizar git pull para atualizar a versão local
                 & $gitExecutable pull origin $branch
             } else {
