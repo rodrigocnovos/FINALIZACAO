@@ -60,20 +60,20 @@ function CriarCheckBox {
     
     # Adicionar checkboxes
     $checkboxData = @(
-        @{Texto = "1 - Checar se faltam drivers"; Nome = ".\rel_driver.ps1"; Tag = "-Wait"},
-        @{Texto = "2 - Instalar office 2021 x64 PT-BR ativado"; Nome = ".\office.ps1"; Tag = ""},
-        @{Texto = "3 - Instalar pacote do Ninite + Anydesk"; Nome = ".\programas.ps1"; Tag = ""},
-        @{Texto = "4 - Abir compartilhamento de arquivos"; Nome = ".\share.ps1"; Tag = ""},
-        @{Texto = "5 - Forçar atualizações do Windows Update e Loja"; Nome = ".\wupdate.ps1"; Tag = ""},
-        @{Texto = "6 - Selecionar programas para bloqueio no Firewall"; Nome = ".\list_program_firewall.ps1"; Tag = "-Wait"},
-        @{Texto = "7 - Limpeza de temporários, arquivos da instalação e rastros de uso"; Nome = ".\limpeza.ps1"; Tag = "-Wait"},
-        @{Texto = "8 - Padronização, papel de parede, ícones de contatos e menus"; Nome = ".\wallpaper.ps1"; Tag = ""},
-        @{Texto = "9 - Bloquear as atualizações"; Nome = ".\block.ps1"; Tag = "-Wait"},
-        @{Texto = "10 - Criar ponto de restauração"; Nome = ".\restorepoint.ps1"; Tag = ""},
-        @{Texto = "11 - Ativador Windows 10/11"; Nome = ".\licenca.ps1"; Tag = "-Wait"},
-        @{Texto = "12 - Gerar relatório de saúde de bateria"; Nome = ".\bat.ps1"; Tag = ""},
-        @{Texto = "13 - Abrir sites de testes de Teclado, Câmera e Microfone"; Nome = ".\test.ps1"; Tag = ""},
-        @{Texto = "14 - Script para correções diversas"; Nome = ".\correction.ps1"; Tag = "-Wait"}
+        @{Texto = "Checar se faltam drivers"; Nome = ".\rel_driver.ps1"; Tag = "-Wait"},
+        @{Texto = "Instalar office 2024 x64 PT-BR ativado"; Nome = ".\office.ps1"; Tag = ""},
+        @{Texto = "Instalar pacote do Ninite + Anydesk"; Nome = ".\programas.ps1"; Tag = ""},
+        @{Texto = "Abir compartilhamento de arquivos"; Nome = ".\share.ps1"; Tag = ""},
+        @{Texto = "Forçar atualizações do Windows Update e Loja"; Nome = ".\wupdate.ps1"; Tag = ""},
+        @{Texto = "Selecionar programas para bloqueio no Firewall"; Nome = ".\list_program_firewall.ps1"; Tag = "-Wait"},
+        @{Texto = "Padronização, papel de parede, ícones de contatos e menus"; Nome = ".\wallpaper.ps1"; Tag = ""},
+        @{Texto = "Bloquear as atualizações"; Nome = ".\block.ps1"; Tag = "-Wait"},
+        @{Texto = "Criar ponto de restauração"; Nome = ".\restorepoint.ps1"; Tag = ""},
+        @{Texto = "Ativador Windows 10/11"; Nome = ".\licenca.ps1"; Tag = "-Wait"},
+        @{Texto = "Gerar relatório de saúde de bateria"; Nome = ".\bat.ps1"; Tag = ""},
+        @{Texto = "Abrir sites de testes de Teclado, Câmera e Microfone"; Nome = ".\test.ps1"; Tag = ""},
+        @{Texto = "Script para correções diversas"; Nome = ".\correction.ps1"; Tag = "-Wait"},
+        @{Texto = "Limpeza de temporários, arquivos da instalação e rastros de uso"; Nome = ".\limpeza.ps1"; Tag = "-Wait"}
         )
         
         $yPosition = 90

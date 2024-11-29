@@ -4,9 +4,9 @@
 ".\FINALIZACAO\"
 
 
-$office = ".\softwares\Office 2013-2021 C2R Install - Install Lite 7.3.9\OInstall.exe"
-$ZipInstalador = ".\softwares\Office 2013-2021 C2R Install - Install Lite 7.3.9\OInstall.zip"
-$LocalExtracao = ".\softwares\Office 2013-2021 C2R Install - Install Lite 7.3.9\"
+$office = ".\softwares\Office 2013-2024 C2R Install - Lite v7.7.7.7 r25 x64\OInstall_x64.exe"
+$ZipInstalador = ".\softwares\Office 2013-2024 C2R Install - Lite v7.7.7.7 r25 x64\OInstall.zip"
+$LocalExtracao = ".\softwares\Office 2013-2024 C2R Install - Lite v7.7.7.7 r25 x64\"
 if (-Not (Test-Path $office) ) {
     Expand-Archive -Path $ZipInstalador -DestinationPath $LocalExtracao
 }
