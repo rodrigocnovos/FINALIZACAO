@@ -24,6 +24,7 @@ $uninstallKeys = @(
 
 # Hash para evitar duplicação de programas
 $uniquePrograms = @{}
+$executablePathsSet = @{}  # Para armazenar caminhos únicos dos executáveis
 
 foreach ($key in $uninstallKeys) {
     $programs = Get-ItemProperty $key | Where-Object { $_.DisplayName -and $_.UninstallString }
@@ -52,10 +53,13 @@ $buttonOK.Add_Click({
             Write-Host $installLocation
             $executablePaths = Get-ChildItem -Path $installLocation -Filter "*.exe" -Recurse | Select-Object -ExpandProperty FullName
             foreach ($executablePath in $executablePaths) {
-                Write-Host "- $executablePath"
-                # Criar regras de firewall aqui (necessita privilégios de administrador)
-                New-NetFirewallRule -DisplayName "Bloqueio $programName" -Direction Outbound -Program $executablePath -Action Block
-                New-NetFirewallRule -DisplayName "Bloqueio $programName" -Direction Inbound -Program $executablePath -Action Block
+                if (-not $executablePathsSet.Contains($executablePath)) {
+                    $executablePathsSet[$executablePath] = $true
+                    Write-Host "- $executablePath"
+                    # Criar regras de firewall aqui (necessita privilégios de administrador)
+                    New-NetFirewallRule -DisplayName "Bloqueio $programName" -Direction Outbound -Program $executablePath -Action Block
+                    New-NetFirewallRule -DisplayName "Bloqueio $programName" -Direction Inbound -Program $executablePath -Action Block
+                }
             }
         }
     }
