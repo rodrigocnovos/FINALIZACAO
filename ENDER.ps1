@@ -66,7 +66,6 @@ function CriarCheckBox {
         @{Texto = "Abir compartilhamento de arquivos"; Nome = ".\share.ps1"; Tag = ""},
         @{Texto = "Forçar atualizações do Windows Update e Loja"; Nome = ".\wupdate.ps1"; Tag = ""},
         @{Texto = "Selecionar programas para bloqueio no Firewall"; Nome = ".\list_program_firewall.ps1"; Tag = "-Wait"},
-        @{Texto = "Padronização, papel de parede, ícones de contatos e menus"; Nome = ".\wallpaper.ps1"; Tag = ""},
         @{Texto = "Bloquear as atualizações"; Nome = ".\block.ps1"; Tag = "-Wait"},
         @{Texto = "Criar ponto de restauração"; Nome = ".\restorepoint.ps1"; Tag = ""},
         @{Texto = "Ativador Windows 10/11"; Nome = ".\licenca.ps1"; Tag = "-Wait"},
@@ -74,6 +73,7 @@ function CriarCheckBox {
         @{Texto = "Abrir sites de testes de Teclado, Câmera e Microfone"; Nome = ".\test.ps1"; Tag = ""},
         @{Texto = "Script para correções diversas"; Nome = ".\correction.ps1"; Tag = "-Wait"},
         @{Texto = "Limpeza de temporários, arquivos da instalação e rastros de uso"; Nome = ".\limpeza.ps1"; Tag = "-Wait"}
+        @{Texto = "Padronização, papel de parede, ícones de contatos e menus"; Nome = ".\wallpaper.ps1"; Tag = ""},
         )
         
         $yPosition = 90
