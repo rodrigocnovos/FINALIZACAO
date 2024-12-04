@@ -15,15 +15,36 @@ $apiUrl = "https://api.github.com/repos/$owner/$repo/commits?sha=$branch"
 function Get-RemoteCommit {
     try {
         $response = Invoke-RestMethod -Uri $apiUrl -Method Get -UseBasicParsing
-        return @{
-            "date" = $response[0].commit.author.date
-            "message" = $response[0].commit.message
-            "sha" = $response[0].sha
-        }
+        return @(
+            @{
+                "date" = $response[0].commit.author.date
+                "message" = $response[0].commit.message
+                "sha" = $response[0].sha
+            }
+        )
     } catch {
         Write-Output "Erro ao consultar o commit remoto: $($_.Exception.Message)"
         return $null
     }
+}
+
+# Função para inicializar o repositório local
+function InitializeRepo {
+    # Avisar o usuário que o diretório será inicializado
+    [System.Windows.Forms.MessageBox]::Show(
+        [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::Default.GetBytes("O diretório local não foi inicializado como um repositório Git.`nSerá inicializado agora, isso pode levar alguns minutos.")),
+        [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::Default.GetBytes("Inicialização do Repositório"))
+    )
+
+    Write-Output "Inicializando o repositório Git local..."
+    & $gitExecutable init
+    & $gitExecutable remote add origin "https://github.com/$owner/$repo.git"
+    & $gitExecutable add *
+    & $gitExecutable commit -m "iniciar"
+    & $gitExecutable fetch origin
+    & $gitExecutable rebase origin/$branch
+    Write-Output "Repositório inicializado e sincronizado com o remoto."
+    UpdateRepo
 }
 
 # Função para atualizar o repositório local
@@ -33,11 +54,9 @@ function UpdateRepo {
     try {
         # Verificar se o repositório está inicializado
         if (-Not (Test-Path "$localRepoPath\.git")) {
-            # Se o repositório não existir, clonar
-            Write-Output "Repositório local não encontrado ou está corrompido. Clonando novamente..."
-            & $gitExecutable clone "https://github.com/$owner/$repo.git" $localRepoPath
+            # Inicializar o repositório local, caso necessário
+            InitializeRepo
         } else {
-            # Caso o repositório já exista, fazer pull
             Write-Output "Repositório local encontrado. Atualizando..."
             
             # Fazer o fetch para garantir que as referências remotas sejam atualizadas
@@ -58,11 +77,8 @@ function UpdateRepo {
 
             # Comparar o commit local com o remoto
             if ($localCommit -ne $remoteCommit["sha"]) {
-                Write-Output "O repositório remoto tem uma versão mais recente. Realizando git pull..."
-                # Ajustando as permissoes
+                Write-Output "O repositório remoto tem uma versão mais recente. Realizando rebase..."
                 & $gitExecutable config --global --add safe.directory *
-                
-                # Realizar git pull para atualizar a versão local
                 & $gitExecutable pull origin $branch
             } else {
                 Write-Output "O repositório local já está atualizado com o remoto."
@@ -96,29 +112,22 @@ if (-not $remoteCommit) {
 
 # Exibir informações do commit remoto
 $commitDate = $remoteCommit["date"]
-$commitMessage = [System.Text.Encoding]::GetEncoding("ISO-8859-1").GetString([System.Text.Encoding]::UTF8.GetBytes($remoteCommit["message"]))
-
-
-# Formatar a mensagem de notificação com UTF-8
-$formattedMessage = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::Default.GetBytes("Foi detectado um commit remoto mais recente.`n`n Último commit:`n$commitMessage`n`nDeseja atualizar seu repositório local?"))
-$caption = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::Default.GetBytes("Atualizar Repositório"))
+$commitMessage = $remoteCommit["message"]
 
 # Obter o commit local diretamente
-$localCommit =  & $gitExecutable rev-parse HEAD
-# $localCommit = git  rev-parse HEAD
-
-
-Write-Output "LOCAL "$localCommit
-Write-Output "REMOTO "$remoteCommit["sha"] 
-
+$localCommit = & $gitExecutable rev-parse HEAD
+Write-Output "LOCAL $localCommit"
+Write-Output "REMOTO $($remoteCommit["sha"])"
 
 # Comparar os commits antes de perguntar ao usuário
 if ($remoteCommit["sha"] -ne $localCommit) {
-    
     # Exibir a caixa de diálogo para o usuário confirmar
-    $result = [System.Windows.Forms.MessageBox]::Show($formattedMessage, $caption, [System.Windows.Forms.MessageBoxButtons]::YesNo)
+    $result = [System.Windows.Forms.MessageBox]::Show(
+        [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::Default.GetBytes("Foi detectado um commit remoto mais recente.`n`n Último commit:`n$commitMessage`n`nDeseja atualizar seu repositório local?")),
+        [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::Default.GetBytes("Atualizar Repositório")),
+        [System.Windows.Forms.MessageBoxButtons]::YesNo
+    )
 
-    # Perguntar ao usuário se deseja atualizar
     if ($result -eq [System.Windows.Forms.DialogResult]::Yes) {
         UpdateRepo
     } else {
@@ -128,10 +137,9 @@ if ($remoteCommit["sha"] -ne $localCommit) {
         )
     }
 } else {
-    Write-Output "O repositorio local ja esta atualizado com o remoto."
+    Write-Output "O repositório local já está atualizado com o remoto."
     [System.Windows.Forms.MessageBox]::Show(
-            [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::Default.GetBytes("Script na última versão")),
-            [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::Default.GetBytes("Atualização"))
-        )
-
+        [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::Default.GetBytes("O repositório já está na última versão.")),
+        [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::Default.GetBytes("Atualização"))
+    )
 }
