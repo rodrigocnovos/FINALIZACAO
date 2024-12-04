@@ -29,6 +29,7 @@ function Get-RemoteCommit {
 }
 
 # Função para inicializar o repositório local
+# Função para inicializar o repositório local
 function InitializeRepo {
     # Avisar o usuário que o diretório será inicializado
     [System.Windows.Forms.MessageBox]::Show(
@@ -38,6 +39,8 @@ function InitializeRepo {
 
     Write-Output "Inicializando o repositório Git local..."
     & $gitExecutable init
+    & $gitExecutable config --global user.name "RODRIGO"
+    & $gitExecutable config --global user.email "rodrigo@microfacilrn.com.br"
     & $gitExecutable remote add origin "https://github.com/$owner/$repo.git"
     & $gitExecutable add *
     & $gitExecutable commit -m "iniciar"
