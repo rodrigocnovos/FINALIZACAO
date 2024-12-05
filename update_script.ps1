@@ -53,6 +53,7 @@ function InitializeRepo {
     & $gitExecutable remote add origin "https://github.com/$owner/$repo.git"
     if ($LASTEXITCODE -ne 0) { throw "Falha ao adicionar o repositório remoto." }
 
+    Write-Output "Adicionando arquivo ao stage, aguarde até 5 minutos..."
     & $gitExecutable add *
     if ($LASTEXITCODE -ne 0) { throw "Falha ao adicionar arquivos ao índice." }
 
