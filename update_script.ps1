@@ -31,7 +31,7 @@ function Get-RemoteCommit {
 # Função para inicializar o repositório local
 # Função para inicializar o repositório local
 function InitializeRepo {
-    # Avisar o usuário que o diretório será inicializado
+    # Exibir aviso para o usuário
     [System.Windows.Forms.MessageBox]::Show(
         [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::Default.GetBytes("O diretório local não foi inicializado como um repositório Git.`nSerá inicializado agora, isso pode levar alguns minutos.")),
         [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::Default.GetBytes("Inicialização do Repositório"))
@@ -39,16 +39,36 @@ function InitializeRepo {
 
     Write-Output "Inicializando o repositório Git local..."
     & $gitExecutable init
+    if ($LASTEXITCODE -ne 0) { throw "Falha ao inicializar o repositório local." }
+
+    & $gitExecutable config init.defaultBranch $branch
+    if ($LASTEXITCODE -ne 0) { throw "Falha ao definir o branch como main" }
+
     & $gitExecutable config --global user.name "RODRIGO"
+    if ($LASTEXITCODE -ne 0) { throw "Falha ao configurar o nome do usuário." }
+
     & $gitExecutable config --global user.email "rodrigo@microfacilrn.com.br"
+    if ($LASTEXITCODE -ne 0) { throw "Falha ao configurar o e-mail do usuário." }
+
     & $gitExecutable remote add origin "https://github.com/$owner/$repo.git"
+    if ($LASTEXITCODE -ne 0) { throw "Falha ao adicionar o repositório remoto." }
+
     & $gitExecutable add *
+    if ($LASTEXITCODE -ne 0) { throw "Falha ao adicionar arquivos ao índice." }
+
     & $gitExecutable commit -m "iniciar"
+    if ($LASTEXITCODE -ne 0) { throw "Falha ao criar o commit inicial." }
+
     & $gitExecutable fetch origin
+    if ($LASTEXITCODE -ne 0) { throw "Falha ao buscar alterações do repositório remoto." }
+
     & $gitExecutable rebase origin/$branch
+    if ($LASTEXITCODE -ne 0) { throw "Falha ao rebasesar com o branch remoto $branch." }
+
     Write-Output "Repositório inicializado e sincronizado com o remoto."
     UpdateRepo
 }
+
 
 # Função para atualizar o repositório local
 function UpdateRepo {
