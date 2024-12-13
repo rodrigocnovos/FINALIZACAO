@@ -109,6 +109,28 @@ $status.Location = New-Object Drawing.Point(20, $($progressBarY - 20))
 $form.Controls.Add($status)
 
 
+# Função para executar scripts e atualizar a barra de progresso
+function ExecuteSelectedScripts {
+    param ($scriptPath, $text, $tag)
+    if (Test-Path $scriptPath) {
+        $status.Text = "Executando: $text"
+        $process = Start-Process powershell.exe -ArgumentList "-File $scriptPath" -NoNewWindow -PassThru
+        
+        # Monitorar o status da execução para atualizar a barra
+        do {
+            # Atualiza a interface para refletir progresso
+            $form.Invoke({
+                AtualizarBarra $atual $total
+            })
+            Start-Sleep -Seconds 1
+        } while (!$process.HasExited)  # Aguarda o processo terminar
+        if ($tag) { $process.WaitForExit() }
+    } else {
+        Write-Host "Script não encontrado: $scriptPath"
+    }
+}
+
+
 # Botões
 $buttonY = $progressBarY + 40
 
@@ -127,21 +149,9 @@ $buttonOK.Add_Click({
     $total = ($checkboxes | Where-Object { $_.Checked }).Count
     $atual = 0
     
-    function ExecuteSelectedScripts {
-        param ($scriptPath, $text, $tag)
-        if (Test-Path $scriptPath) {
-            $status.Text = "Executando: $text"
-            $process = Start-Process powershell.exe -ArgumentList "-File $scriptPath" -NoNewWindow -PassThru
-            if ($tag) { $process.WaitForExit() }
-        } else {
-            Write-Host "Script não encontrado: $scriptPath"
-        }
-    }
-    
     foreach ($checkbox in $checkboxes) {
         if ($checkbox.Checked) {
             $atual++
-            AtualizarBarra $atual $total
             ExecuteSelectedScripts $checkbox.Name $checkbox.Text $checkbox.Tag
         }
     }
@@ -167,11 +177,8 @@ $buttonUpdate.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encodin
 $buttonUpdate.AutoSize = $true
 $buttonUpdate.Add_Click({ 
     Start-Process powershell.exe -ArgumentList "-File update_script.ps1" -NoNewWindow -PassThru
-    
-    # $form.Close()
-     })
+})
 $form.Controls.Add($buttonUpdate)
-
 
 
 $form.ShowDialog()
