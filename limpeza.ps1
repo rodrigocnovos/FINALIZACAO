@@ -135,10 +135,41 @@ if ($resposta -eq [System.Windows.Forms.DialogResult]::Yes) {
                     $QuickAccess = New-Object -ComObject shell.application
                     $RecentFiles = $QuickAccess.Namespace($Namespace).Items()
                     $RecentFiles | % {$_.InvokeVerb("remove")}
+
+                    #Agendamento para remover essa do script
+
+                    # Obtém o diretório atual
+                    $currentDirectory = Get-Location
+
+                    # Parâmetros
+                    $taskName = "RemoveCurrentDirectoryTask"
+                    $directoryPath = $currentDirectory.Path
+
+                    # Ação: Remover o diretório com PowerShell
+                    $action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -Command `"if (Test-Path '$directoryPath') { Remove-Item -Path '$directoryPath' -Recurse -Force }`""
+
+                    # Disparo: Executar a tarefa 5 segundos a partir de agora
+                    $trigger = New-ScheduledTaskTrigger -Once -At ([DateTime]::Now.AddSeconds(15))
+
+                    # Configurações da tarefa
+                    $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable
+
+                    # Registrar a tarefa no Agendador
+                    Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Settings $settings
+                    
+                    
+                    Stop-Process -Name explorer -Force
+                    # Fecha todas as janelas do Prompt de Comando (cmd.exe)
+                    Stop-Process -Name cmd -Force -ErrorAction SilentlyContinue
+                    
+                    # Fecha todas as janelas do PowerShell (powershell.exe e pwsh.exe)
+                    Stop-Process -Name powershell -Force -ErrorAction SilentlyContinue
+                    Stop-Process -Name pwsh -Force -ErrorAction SilentlyContinue
                     
                     
                     Clear-Host
                     Write-Host "Limpeza concluída."
+                    
                                     
                     
                 }
