@@ -122,25 +122,32 @@ $buttonOK.Add_Click({
     $total = ($checkboxes | Where-Object { $_.Checked }).Count
     $atual = 0
     
-    function ExecuteSelectedScripts {
-        param ($scriptPath, $text, $tag)
-        if (Test-Path $scriptPath) {
-            $status.Text = "Executando: $text"
-            $process = Start-Process powershell.exe -ArgumentList "-File $scriptPath" -NoNewWindow -PassThru
-            # Monitorar o status da execução para atualizar a barra
-            do {
-                # Atualiza a interface para refletir progresso
+    # Função para execução dos scripts e atualizar a interface
+function ExecuteSelectedScripts {
+    param ($scriptPath, $text, $tag)
+    if (Test-Path $scriptPath) {
+        $status.Text = "Executando: $text"
+        $process = Start-Process powershell.exe -ArgumentList "-File $scriptPath" -NoNewWindow -PassThru
+        # Monitorar o status da execução para atualizar a barra
+        do {
+            try {
+                # Tenta atualizar a interface de progresso
                 $form.Invoke({
                     param ($atual, $total)
                     AtualizarBarra $atual $total
                 }, $atual, $total)
-                Start-Sleep -Seconds 1
-            } while (!$process.HasExited)  # Aguarda o processo terminar
-            if ($tag) { $process.WaitForExit() }
-        } else {
-            Write-Host "Script não encontrado: $scriptPath"
-        }
+            } catch {
+                # Ignora o erro causado pelo Invoke
+                # Exemplo de log, caso você queira rastrear esses erros
+                Write-Host "Erro ao invocar o método de atualização da interface: $_"
+            }
+            Start-Sleep -Seconds 1
+        } while (!$process.HasExited)  # Aguarda o processo terminar
+        if ($tag) { $process.WaitForExit() }
+    } else {
+        Write-Host "Script não encontrado: $scriptPath"
     }
+}
     
     foreach ($checkbox in $checkboxes) {
         if ($checkbox.Checked) {
