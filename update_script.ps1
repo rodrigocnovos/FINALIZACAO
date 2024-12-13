@@ -8,7 +8,7 @@ $gitExecutable = Join-Path $localRepoPath "softwares\PortableGit\bin\git.exe"
 # URL da API do GitHub para obter informações do último commit remoto
 $owner = "rodrigocnovos"
 $repo = "finalizacao"
-$branch = "main"
+$branch = "development"
 $apiUrl = "https://api.github.com/repos/$owner/$repo/commits?sha=$branch"
 
 # Função para obter o último commit remoto
