@@ -123,6 +123,7 @@ $buttonOK.Add_Click({
     $atual = 0
     
     # Função para execução dos scripts e atualizar a interface
+# Função para execução dos scripts e atualizar a interface
 function ExecuteSelectedScripts {
     param ($scriptPath, $text, $tag)
     if (Test-Path $scriptPath) {
@@ -137,9 +138,8 @@ function ExecuteSelectedScripts {
                     AtualizarBarra $atual $total
                 }, $atual, $total)
             } catch {
-                # Ignora o erro causado pelo Invoke
-                # Exemplo de log, caso você queira rastrear esses erros
-                Write-Host "Erro ao invocar o método de atualização da interface: $_"
+                # Ignora qualquer erro ao invocar o método de atualização da interface
+                # Utiliza o -ErrorAction SilentlyContinue para suprimir qualquer erro
             }
             Start-Sleep -Seconds 1
         } while (!$process.HasExited)  # Aguarda o processo terminar
