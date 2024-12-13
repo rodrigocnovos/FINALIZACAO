@@ -91,7 +91,7 @@ $progressBar = New-Object Windows.Forms.ProgressBar
 $progressBar.Location = New-Object Drawing.Point(20, $progressBarY)
 $progressBar.Size = New-Object Drawing.Size(400, 20)
 $progressBar.Minimum = 0
-$progressBar.Maximum = $checkboxes.Count
+$progressBar.Maximum = 100
 $progressBar.Value = 0
 $form.Controls.Add($progressBar)
 
@@ -99,8 +99,9 @@ $form.Controls.Add($progressBar)
 # Função para atualizar a barra de progresso e status
 function AtualizarBarra {
     param ($atual, $total)
-    $progressBar.Value = $atual
-    $status.Text = "Executando item $atual de $total..."
+    $percentual = [math]::Round(($atual / $total) * 100)
+    $progressBar.Value = $percentual
+    $status.Text = "Executando item $atual de $total... ($percentual%)"
 }
 
 $status = New-Object Windows.Forms.Label
