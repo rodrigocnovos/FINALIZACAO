@@ -113,10 +113,12 @@ $resultado = Verificar-AtalhosQuebradosEDuplicados
 
 # Exibir alerta se houver atalhos quebrados ou duplicados
 if ($resultado.AtalhosQuebrados.Count -gt 0) {
-    $mensagem = "Os seguintes atalhos estão quebrados: `n`n"
+    $mensagem = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Os seguintes atalhos estão quebrados: `n`n"))
     foreach ($atalho in $resultado.AtalhosQuebrados) {
-        $mensagem += "$($atalho.Tipo): $($atalho.Atalho) -> Destino: $($atalho.Destino)`n`n"
+        $mensagem += "$($atalho.Tipo): $($atalho.Atalho)`n`n"
     }
+
+    $mensagem += "CLIQUE EM SIM E BAIXE DO SERVIDOR`n`n"
 
     # Exibir MessageBox com o botão "BAIXAR PROGRAMAS DO SERVIDOR"
     Add-Type -AssemblyName PresentationCore, PresentationFramework
