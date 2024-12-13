@@ -47,6 +47,14 @@ function Verificar-AtalhosQuebradosEDuplicados {
     }
 }
 
+# Função para abrir o navegador com o site para baixar os atalhos
+function Abrir-SiteParaBaixarAtalho {
+    # URL do servidor
+    $url = "http://177.107.97.38:9123"
+    # Abrir o site no navegador padrão
+    Start-Process $url
+}
+
 # Parte principal do script
 # Configurar papel de parede, copiar ícones, etc.
 $osInfo = Get-CimInstance -ClassName Win32_OperatingSystem
@@ -69,7 +77,7 @@ Write-Host $imagePath
 # Caminho dos ícones
 $iconsPath = ".\ico\*.url"
 $iconsPathico = ".\ico\*.ico"
-#Caminho para o desktop do usuário corrente
+# Caminho para o desktop do usuário corrente
 $desktopPath = [Environment]::GetFolderPath("Desktop")
 Remove-Item $desktopPath\* -Force -Recurse -ErrorAction SilentlyContinue 2>$null1
 
@@ -105,12 +113,19 @@ $resultado = Verificar-AtalhosQuebradosEDuplicados
 
 # Exibir alerta se houver atalhos quebrados ou duplicados
 if ($resultado.AtalhosQuebrados.Count -gt 0) {
-    $mensagem = "Os seguintes atalhos quebrados: `n`n"
+    $mensagem = "Os seguintes atalhos estão quebrados: `n`n"
     foreach ($atalho in $resultado.AtalhosQuebrados) {
         $mensagem += "$($atalho.Tipo): $($atalho.Atalho) -> Destino: $($atalho.Destino)`n`n"
     }
+
+    # Exibir MessageBox com o botão "BAIXAR PROGRAMAS DO SERVIDOR"
     Add-Type -AssemblyName PresentationCore, PresentationFramework
-    [System.Windows.MessageBox]::Show($mensagem, "Atalhos Quebrados ou Duplicados", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Warning)
+    $resultadoMensagem = [System.Windows.MessageBox]::Show($mensagem, "Atalhos Quebrados ou Duplicados", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Warning)
+
+    # Se o usuário clicar em "Yes" (Baixar Programas do Servidor)
+    if ($resultadoMensagem -eq [System.Windows.MessageBoxResult]::Yes) {
+        Abrir-SiteParaBaixarAtalho
+    }
 } else {
     Write-Host "Nenhum atalho quebrado ou duplicado encontrado."
 }
@@ -129,6 +144,5 @@ if ($resultado.AtalhosParaRemover.Count -gt 0) {
 $sourceFilePath = ".\DefaultLayouts.xml"
 $destinationFolderPath = "$env:LocalAppData\Microsoft\Windows\Shell"
 Copy-Item -Path $sourceFilePath -Destination $destinationFolderPath
-
 
 Remove-Item -Path C:\Users\Public\Desktop\*  -Force
