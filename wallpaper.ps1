@@ -118,44 +118,14 @@ if ($resultado.AtalhosQuebrados.Count -gt 0) {
         $mensagem += "$($atalho.Tipo): $($atalho.Atalho) -> Destino: $($atalho.Destino)`n`n"
     }
 
-    # Criar formulário customizado com botão "BAIXAR PROGRAMAS DO SERVIDOR"
-    Add-Type -TypeDefinition @"
-    using System;
-    using System.Windows.Forms;
-    public class CustomMessageBox : Form {
-        private Button btnDownload;
-        private Label lblMessage;
-        
-        public CustomMessageBox(string message) {
-            this.Text = 'Atalhos Quebrados ou Duplicados';
-            this.Size = new System.Drawing.Size(400, 200);
-            this.StartPosition = FormStartPosition.CenterScreen;
-            
-            lblMessage = new Label() {
-                Text = message,
-                AutoSize = true,
-                Location = new System.Drawing.Point(20, 20),
-                MaximumSize = new System.Drawing.Size(360, 0)
-            };
-            this.Controls.Add(lblMessage);
-            
-            btnDownload = new Button() {
-                Text = 'BAIXAR PROGRAMAS DO SERVIDOR',
-                Size = new System.Drawing.Size(200, 30),
-                Location = new System.Drawing.Point(100, 100)
-            };
-            btnDownload.Click += (sender, e) => { 
-                System.Diagnostics.Process.Start("http://177.107.97.38:9123");
-                this.Close();
-            };
-            this.Controls.Add(btnDownload);
-        }
-    }
-"@
+    # Exibir MessageBox com o botão "BAIXAR PROGRAMAS DO SERVIDOR"
+    Add-Type -AssemblyName PresentationCore, PresentationFramework
+    $resultadoMensagem = [System.Windows.MessageBox]::Show($mensagem, "Atalhos Quebrados ou Duplicados", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Warning)
 
-    # Exibir formulário customizado
-    $form = New-Object CustomMessageBox $mensagem
-    $form.ShowDialog()
+    # Se o usuário clicar em "Yes" (Baixar Programas do Servidor)
+    if ($resultadoMensagem -eq [System.Windows.MessageBoxResult]::Yes) {
+        Abrir-SiteParaBaixarAtalho
+    }
 } else {
     Write-Host "Nenhum atalho quebrado ou duplicado encontrado."
 }
