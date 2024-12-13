@@ -107,7 +107,7 @@ if ($resposta -eq [System.Windows.Forms.DialogResult]::Yes) {
                     
                     #Caminho para o desktop do usuário corrente
                     $desktopPath = [Environment]::GetFolderPath("Desktop")
-                    Remove-Item $desktopPath\* -Force -Recurse -ErrorAction SilentlyContinue 2>$null
+                    # Remove-Item $desktopPath\* -Force -Recurse -ErrorAction SilentlyContinue 2>$null
                     
                     # Excluir arquivos do desktop público
                     $publicDesktopPath = [System.Environment]::GetFolderPath("CommonDesktopDirectory")
