@@ -63,7 +63,7 @@ function CriarCheckBox {
         @{Texto = "Checar se faltam drivers"; Nome = ".\rel_driver.ps1"; Tag = "-Wait"},
         @{Texto = "Instalar office 2024 x64 PT-BR ativado"; Nome = ".\office.ps1"; Tag = ""},
         @{Texto = "Instalar pacote do Ninite + Anydesk"; Nome = ".\programas.ps1"; Tag = ""},
-        @{Texto = "Abir compartilhamento de arquivos"; Nome = ".\share.ps1"; Tag = ""},
+        @{Texto = "Baixe os programas no nosso servidor"; Nome = ".\Servidor_share.ps1"; Tag = ""},
         @{Texto = "Forçar atualizações do Windows Update e Loja"; Nome = ".\wupdate.ps1"; Tag = ""},
         @{Texto = "Selecionar programas para bloqueio no Firewall"; Nome = ".\list_program_firewall.ps1"; Tag = "-Wait"},
         @{Texto = "Bloquear as atualizações"; Nome = ".\block.ps1"; Tag = "-Wait"},
