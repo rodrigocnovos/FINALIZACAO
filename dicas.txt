@@ -1,0 +1,8 @@
+local onde fica o arquivo binário do menu do windows 11
+
+
+
+%LOCALAPPDATA%\Local\Packages\Microsoft.Windows.StartMenuExperienceHost_cw5n1h2txyewy\LocalState
+
+arquivo start.bin ou start2.bin 
+
