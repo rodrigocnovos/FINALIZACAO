@@ -1,5 +1,56 @@
+#Desbloquear os arquivos baixados da internet
 Unblock-File *
 
+
+#Colocar o Edge como padrão
+# Diretório temporário para armazenar o arquivo de associações
+$tempDir = "C:\Temp"
+$assocFile = "$tempDir\AppAssociations.xml"
+
+# Garantir que o diretório existe
+if (!(Test-Path $tempDir)) {
+    New-Item -ItemType Directory -Path $tempDir -Force
+}
+
+# Exportar as associações de aplicativos padrão existentes
+Write-Host "Exportando associações atuais para $assocFile..."
+Dism /Online /Export-DefaultAppAssociations:$assocFile
+
+# Verificar se o arquivo foi exportado corretamente
+if (!(Test-Path $assocFile)) {
+    Write-Error "Falha ao exportar as associações padrão."
+    exit 1
+}
+
+# Ler o conteúdo do arquivo exportado
+Write-Host "Modificando o arquivo de associações para definir o Microsoft Edge..."
+$appAssocContent = Get-Content -Path $assocFile
+
+# Substituir as associações de navegadores existentes para usar o Microsoft Edge
+$updatedContent = $appAssocContent -replace '<Association Identifier="\.htm".*?>', '<Association Identifier=".htm" ProgId="MSEdgeHTM" ApplicationName="Microsoft Edge" />'
+$updatedContent = $updatedContent -replace '<Association Identifier="\.html".*?>', '<Association Identifier=".html" ProgId="MSEdgeHTM" ApplicationName="Microsoft Edge" />'
+$updatedContent = $updatedContent -replace '<Association Identifier="http".*?>', '<Association Identifier="http" ProgId="MSEdgeHTM" ApplicationName="Microsoft Edge" />'
+$updatedContent = $updatedContent -replace '<Association Identifier="https".*?>', '<Association Identifier="https" ProgId="MSEdgeHTM" ApplicationName="Microsoft Edge" />'
+
+# Salvar as alterações no arquivo
+$updatedContent | Set-Content -Path $assocFile -Force
+
+# Importar o arquivo atualizado para aplicar as associações
+Write-Host "Importando as novas associações..."
+Dism /Online /Import-DefaultAppAssociations:$assocFile
+
+# Verificar sucesso
+if ($?) {
+    Write-Host "Microsoft Edge foi definido como navegador padrão com sucesso."
+} else {
+    Write-Error "Falha ao importar as associações atualizadas."
+}
+
+# Limpar arquivos temporários (opcional)
+Remove-Item -Path $assocFile -Force
+
+
+#Inicia o Form para escolher as opções
 Start-Process powershell.exe -ArgumentList "-File update_script.ps1" -NoNewWindow -PassThru
 
 Add-Type -AssemblyName System.Windows.Forms
@@ -94,12 +145,12 @@ $checkboxData = @(
     @{Texto = "Forçar atualizações do Windows Update e Loja"; Nome = ".\wupdate.ps1"; Tag = ""},
     @{Texto = "Selecionar programas para bloqueio no Firewall"; Nome = ".\list_program_firewall.ps1"; Tag = "-Wait"},
     @{Texto = "Bloquear as atualizações"; Nome = ".\block.ps1"; Tag = "-Wait"},
-    @{Texto = "Criar ponto de restauração"; Nome = ".\restorepoint.ps1"; Tag = ""},
     @{Texto = "Ativador Windows 10/11"; Nome = ".\licenca.ps1"; Tag = "-Wait"},
     @{Texto = "Gerar relatório de saúde de bateria"; Nome = ".\bat.ps1"; Tag = ""},
     @{Texto = "Abrir sites de testes de Teclado, Câmera e Microfone"; Nome = ".\test.ps1"; Tag = ""},
     @{Texto = "Script para correções diversas"; Nome = ".\correction.ps1"; Tag = "-Wait"},
     @{Texto = "Padronização, papel de parede, ícones de contatos e menus"; Nome = ".\wallpaper.ps1"; Tag = ""},
+    @{Texto = "Criar ponto de restauração"; Nome = ".\restorepoint.ps1"; Tag = "-Wait"},
     @{Texto = "Limpeza de temporários, arquivos da instalação e rastros de uso"; Nome = ".\limpeza.ps1"; Tag = "-Wait"}
 )
 
