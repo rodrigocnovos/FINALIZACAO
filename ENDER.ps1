@@ -121,8 +121,8 @@ $checkboxData = @(
     @{Texto = "Abrir sites de testes de Teclado, Câmera e Microfone"; Nome = ".\test.ps1"; Tag = ""},
     @{Texto = "Script para correções diversas"; Nome = ".\correction.ps1"; Tag = "-Wait"},
     @{Texto = "Padronização, papel de parede, ícones de contatos e menus"; Nome = ".\wallpaper.ps1"; Tag = ""},
-    @{Texto = "Limpeza de temporários, arquivos da instalação e rastros de uso"; Nome = ".\limpeza.ps1"; Tag = "-Wait"},
-    @{Texto = "Criar ponto de restauração"; Nome = ".\restorepoint.ps1"; Tag = ""}
+    @{Texto = "Criar ponto de restauração"; Nome = ".\restorepoint.ps1"; Tag = "-Wait"},
+    @{Texto = "Limpeza de temporários, arquivos da instalação e rastros de uso"; Nome = ".\limpeza.ps1"; Tag = "-Wait"}
 )
 
 $yPosition = 90
