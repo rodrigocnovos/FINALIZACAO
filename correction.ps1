@@ -33,6 +33,12 @@ $options = @(
     @{ Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Executar o Massgrave -> irm https://get.activated.win | iex")); Action = {
         Write-Host "Confira a janela do ativado aberta e responda"
         irm https://get.activated.win | iex
+    }},
+    @{ Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Criar tarefa de monitoramento de IPS")); Action = {
+        Write-Host "Cadastrando tarefa"
+        Start-Process powershell.exe -ArgumentList "-File .\ping_monitor.ps1" -NoNewWindow -PassThru -Wait
+        
+        
     }}
 
 
