@@ -161,7 +161,7 @@ if ($remoteCommit["sha"] -ne $localCommit) {
         )
     }
 } else {
-    Write-Output "O repositório local já está atualizado com o remoto."
+    Write-Output "O repositorio local ja esta atualizado com o remoto."
     [System.Windows.Forms.MessageBox]::Show(
         [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::Default.GetBytes("O repositório já está na última versão.")),
         [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::Default.GetBytes("Atualização"))
