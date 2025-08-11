@@ -1,54 +1,28 @@
 #Desbloquear os arquivos baixados da internet
 Unblock-File *
 
+# Importa módulo para associações de aplicativos
+Import-Module SetUserFTA
 
-#Colocar o Edge como padrão
-# Diretório temporário para armazenar o arquivo de associações
-$tempDir = "C:\Temp"
-$assocFile = "$tempDir\AppAssociations.xml"
+function Set-DefaultBrowser {
+    param(
+        [Parameter(Mandatory)]
+        [ValidateSet('MSEdge')]
+        [string]$Browser
+    )
 
-# Garantir que o diretório existe
-if (!(Test-Path $tempDir)) {
-    New-Item -ItemType Directory -Path $tempDir -Force
+    switch ($Browser) {
+        'MSEdge' {
+            SetUserFTA -Extension '.htm'  -ProgId 'MSEdgeHTM'
+            SetUserFTA -Extension '.html' -ProgId 'MSEdgeHTM'
+            SetUserFTA -Extension 'http'  -ProgId 'MSEdgeHTM'
+            SetUserFTA -Extension 'https' -ProgId 'MSEdgeHTM'
+        }
+    }
 }
 
-# Exportar as associações de aplicativos padrão existentes
-Write-Host "Exportando associações atuais para $assocFile..."
-Dism /Online /Export-DefaultAppAssociations:$assocFile
-
-# Verificar se o arquivo foi exportado corretamente
-if (!(Test-Path $assocFile)) {
-    Write-Error "Falha ao exportar as associações padrão."
-    exit 1
-}
-
-# Ler o conteúdo do arquivo exportado
-Write-Host "Modificando o arquivo de associações para definir o Microsoft Edge..."
-$appAssocContent = Get-Content -Path $assocFile
-
-# Substituir as associações de navegadores existentes para usar o Microsoft Edge
-$updatedContent = $appAssocContent -replace '<Association Identifier="\.htm".*?>', '<Association Identifier=".htm" ProgId="MSEdgeHTM" ApplicationName="Microsoft Edge" />'
-$updatedContent = $updatedContent -replace '<Association Identifier="\.html".*?>', '<Association Identifier=".html" ProgId="MSEdgeHTM" ApplicationName="Microsoft Edge" />'
-$updatedContent = $updatedContent -replace '<Association Identifier="http".*?>', '<Association Identifier="http" ProgId="MSEdgeHTM" ApplicationName="Microsoft Edge" />'
-$updatedContent = $updatedContent -replace '<Association Identifier="https".*?>', '<Association Identifier="https" ProgId="MSEdgeHTM" ApplicationName="Microsoft Edge" />'
-
-# Salvar as alterações no arquivo
-$updatedContent | Set-Content -Path $assocFile -Force
-
-# Importar o arquivo atualizado para aplicar as associações
-Write-Host "Importando as novas associações..."
-Dism /Online /Import-DefaultAppAssociations:$assocFile
-
-# Verificar sucesso
-if ($?) {
-    Write-Host "Microsoft Edge foi definido como navegador padrão com sucesso."
-} else {
-    Write-Error "Falha ao importar as associações atualizadas."
-}
-
-# Limpar arquivos temporários (opcional)
-Remove-Item -Path $assocFile -Force
-
+# Define o Microsoft Edge como navegador padrão
+Set-DefaultBrowser -Browser 'MSEdge'
 
 #Inicia o Form para escolher as opções
 Start-Process powershell.exe -ArgumentList "-File update_script.ps1" -NoNewWindow -PassThru
