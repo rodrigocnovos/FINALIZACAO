@@ -8,7 +8,7 @@ $gitExecutable = Join-Path $localRepoPath "softwares\PortableGit\bin\git.exe"
 # URL da API do GitHub para obter informações do último commit remoto
 $owner = "rodrigocnovos"
 $repo = "finalizacao"
-$branch = "development"
+$branch = "main"
 $apiUrl = "https://api.github.com/repos/$owner/$repo/commits?sha=$branch"
 
 # Função para obter o último commit remoto
@@ -161,7 +161,7 @@ if ($remoteCommit["sha"] -ne $localCommit) {
         )
     }
 } else {
-    Write-Output "O repositorio local ja esta atualizado com o remoto."
+    Write-Output "O repositório local já está atualizado com o remoto."
     [System.Windows.Forms.MessageBox]::Show(
         [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::Default.GetBytes("O repositório já está na última versão.")),
         [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::Default.GetBytes("Atualização"))

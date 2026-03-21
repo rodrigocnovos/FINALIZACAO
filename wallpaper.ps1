@@ -47,8 +47,6 @@ function Verificar-AtalhosQuebradosEDuplicados {
     }
 }
 
-<<<<<<< HEAD
-=======
 # Função para abrir o navegador com o site para baixar os atalhos
 function Abrir-SiteParaBaixarAtalho {
     # URL do servidor
@@ -57,7 +55,6 @@ function Abrir-SiteParaBaixarAtalho {
     Start-Process $url
 }
 
->>>>>>> main
 # Parte principal do script
 # Configurar papel de parede, copiar ícones, etc.
 $osInfo = Get-CimInstance -ClassName Win32_OperatingSystem
@@ -80,11 +77,7 @@ Write-Host $imagePath
 # Caminho dos ícones
 $iconsPath = ".\ico\*.url"
 $iconsPathico = ".\ico\*.ico"
-<<<<<<< HEAD
-#Caminho para o desktop do usuário corrente
-=======
 # Caminho para o desktop do usuário corrente
->>>>>>> main
 $desktopPath = [Environment]::GetFolderPath("Desktop")
 Remove-Item $desktopPath\* -Force -Recurse -ErrorAction SilentlyContinue 2>$null1
 
@@ -120,14 +113,6 @@ $resultado = Verificar-AtalhosQuebradosEDuplicados
 
 # Exibir alerta se houver atalhos quebrados ou duplicados
 if ($resultado.AtalhosQuebrados.Count -gt 0) {
-<<<<<<< HEAD
-    $mensagem = "Os seguintes atalhos quebrados: `n`n"
-    foreach ($atalho in $resultado.AtalhosQuebrados) {
-        $mensagem += "$($atalho.Tipo): $($atalho.Atalho) -> Destino: $($atalho.Destino)`n`n"
-    }
-    Add-Type -AssemblyName PresentationCore, PresentationFramework
-    [System.Windows.MessageBox]::Show($mensagem, "Atalhos Quebrados ou Duplicados", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Warning)
-=======
     $mensagem = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Os seguintes atalhos estão quebrados: `n`n"))
     foreach ($atalho in $resultado.AtalhosQuebrados) {
         $mensagem += "$($atalho.Tipo): $($atalho.Atalho)`n`n"
@@ -143,7 +128,6 @@ if ($resultado.AtalhosQuebrados.Count -gt 0) {
     if ($resultadoMensagem -eq [System.Windows.MessageBoxResult]::Yes) {
         Abrir-SiteParaBaixarAtalho
     }
->>>>>>> main
 } else {
     Write-Host "Nenhum atalho quebrado ou duplicado encontrado."
 }
@@ -163,8 +147,4 @@ $sourceFilePath = ".\DefaultLayouts.xml"
 $destinationFolderPath = "$env:LocalAppData\Microsoft\Windows\Shell"
 Copy-Item -Path $sourceFilePath -Destination $destinationFolderPath
 
-<<<<<<< HEAD
-
-=======
->>>>>>> main
 Remove-Item -Path C:\Users\Public\Desktop\*  -Force
