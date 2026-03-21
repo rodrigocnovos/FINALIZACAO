@@ -118,9 +118,9 @@ if ($resposta -eq [System.Windows.Forms.DialogResult]::Yes) {
                     # Obter o caminho da pasta do usuário que fez login no sistema
                     $userProfilePath = [System.Environment]::GetEnvironmentVariable('USERPROFILE')
                     
-                    # Limpar a pasta de Downloads do usuário corrente
-                    $downloadsPath = Join-Path -Path $userProfilePath -ChildPath 'Downloads' 
-                    Remove-Item -Path $downloadsPath\* -Force -Recurse -ErrorAction SilentlyContinue  2>$null
+                    # Limpar a pasta de Downloads do usuário corrente ao final do processo,
+                    # mesmo quando o launcher estiver sendo executado a partir dela.
+                    $downloadsPath = Join-Path -Path $userProfilePath -ChildPath 'Downloads'
                     
                     # Limpar a pasta de Documentos do usuário corrente
                     $documentsPath = Join-Path -Path $userProfilePath -ChildPath 'Documents'
@@ -136,26 +136,35 @@ if ($resposta -eq [System.Windows.Forms.DialogResult]::Yes) {
                     $RecentFiles = $QuickAccess.Namespace($Namespace).Items()
                     $RecentFiles | % {$_.InvokeVerb("remove")}
 
-                    #Agendamento para remover essa do script
+                    # Agendar uma limpeza tardia em TEMP que aguarda o PID atual encerrar.
+                    $currentDirectory = (Get-Location).Path
+                    $taskName = "FinalizacaoDeferredCleanup"
+                    $helperBatPath = Join-Path $env:TEMP "FinalizacaoDeferredCleanup.cmd"
+                    $currentPid = $PID
+                    $escapedDownloadsPath = $downloadsPath.Replace("'", "''")
+                    $escapedCurrentDirectory = $currentDirectory.Replace("'", "''")
+                    $escapedTaskName = $taskName.Replace("'", "''")
 
-                    # Obtém o diretório atual
-                    $currentDirectory = Get-Location
+                    $helperBatContent = @"
+@echo off
+:wait_for_process
+tasklist /FI "PID eq $currentPid" | find "$currentPid" >nul
+if not errorlevel 1 (
+    timeout /t 2 /nobreak >nul
+    goto wait_for_process
+)
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "`$downloadsPath = '$escapedDownloadsPath'; `$currentDirectory = '$escapedCurrentDirectory'; if (Test-Path -LiteralPath `$downloadsPath) { Get-ChildItem -LiteralPath `$downloadsPath -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue }; if (Test-Path -LiteralPath `$currentDirectory) { Remove-Item -LiteralPath `$currentDirectory -Recurse -Force -ErrorAction SilentlyContinue }; schtasks.exe /Delete /TN '$escapedTaskName' /F *>`$null"
+del /f /q "%~f0" >nul 2>&1
+"@
 
-                    # Parâmetros
-                    $taskName = "RemoveCurrentDirectoryTask"
-                    $directoryPath = $currentDirectory.Path
+                    Set-Content -Path $helperBatPath -Value $helperBatContent -Encoding ASCII -Force
 
-                    # Ação: Remover o diretório com PowerShell
-                    $action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -Command `"if (Test-Path '$directoryPath') { Remove-Item -Path '$directoryPath' -Recurse -Force }`""
-
-                    # Disparo: Executar a tarefa 5 segundos a partir de agora
-                    $trigger = New-ScheduledTaskTrigger -Once -At ([DateTime]::Now.AddSeconds(15))
-
-                    # Configurações da tarefa
+                    $action = New-ScheduledTaskAction -Execute $helperBatPath
+                    $trigger = New-ScheduledTaskTrigger -Once -At ([DateTime]::Now.AddSeconds(5))
                     $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable
 
-                    # Registrar a tarefa no Agendador
-                    Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Settings $settings
+                    Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction SilentlyContinue
+                    Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Settings $settings | Out-Null
                     
                     
                     Stop-Process -Name explorer -Force

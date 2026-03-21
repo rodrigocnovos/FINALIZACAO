@@ -1,14 +1,29 @@
-# Start-Process ms-settings:windowsupdate
-
-
 Start-Process ms-windows-store:
 
-echo S | powershell Install-Module -Name PSWindowsUpdate -Force
-Import-Module PSWindowsUpdate -Force
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+Install-PackageProvider -Name NuGet -Force -Confirm:$false
 Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
-Install-PackageProvider -Name NuGet -Confirm:$false
 
-Get-WindowsUpdate
+if (-not (Get-Module -ListAvailable -Name PSWindowsUpdate)) {
+    Install-Module -Name PSWindowsUpdate -Force -Confirm:$false
+}
 
+Import-Module PSWindowsUpdate -Force
 
-Install-WindowsUpdate -Acceptall -Install -AutoReboot
+Get-WindowsUpdate -MicrosoftUpdate
+Install-WindowsUpdate -MicrosoftUpdate -AcceptAll -Install -IgnoreReboot
+
+$needsReboot = $false
+try {
+    $needsReboot = Get-WURebootStatus -Silent
+} catch {
+    $needsReboot = Test-Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Auto Update\RebootRequired"
+}
+
+if ($needsReboot) {
+    Write-Host "Reinicio necessario para continuar as atualizacoes."
+    exit 194
+}
+
+exit 0

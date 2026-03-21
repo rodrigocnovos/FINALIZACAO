@@ -1,40 +1,51 @@
-$programList = @()
+param(
+    [string]$SelectionKeysCsv
+)
 
-$programList +=[PSCustomObject]@{
-    programa = ".\softwares\Anydesk.exe";
-    param1 = "--install";
-    param2 = "`"C:\Program Files (x86)\AnyDesk`"";
-    param3 = "--start-with-win";
-    param4 = "--create-desktop-icon"
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$softwareDir = Join-Path $scriptDir "softwares"
+
+$programList = @(
+    [PSCustomObject]@{
+        Key = "ninite_web"
+        Name = "Ninite AnyDesk Chrome Firefox Foxit Reader"
+        Path = Join-Path $softwareDir "Ninite AnyDesk Chrome Firefox Foxit Reader Installer.exe"
+        Type = "exe"
+        Arguments = @()
+    },
+    [PSCustomObject]@{
+        Key = "ninite_tools"
+        Name = "Ninite Glary Malwarebytes Revo TeraCopy"
+        Path = Join-Path $softwareDir "Ninite Glary Malwarebytes Revo TeraCopy Installer.exe"
+        Type = "exe"
+        Arguments = @()
+    },
+    [PSCustomObject]@{
+        Key = "rustdesk"
+        Name = "RustDesk"
+        Path = Join-Path $softwareDir "rustdesk-1.4.6-x86_64.msi"
+        Type = "msi"
+        Arguments = @("/i", "`"$(Join-Path $softwareDir "rustdesk-1.4.6-x86_64.msi")`"", "/qn")
+    }
+)
+
+if ($SelectionKeysCsv) {
+    $selectedKeys = $SelectionKeysCsv.Split(",", [System.StringSplitOptions]::RemoveEmptyEntries) | ForEach-Object { $_.Trim() }
+    $programList = $programList | Where-Object { $selectedKeys -contains $_.Key }
 }
-
-# $programList +=[PSCustomObject]@{
-#     programa = ".\softwares\ninite.exe";
-#     param1 = " ";
-#     param2 = " ";
-#     param3 = " ";
-#     param4 = " "
-# }
-
-$programList
 
 foreach ($program in $programList) {
-    if ($program.programa -like "*.exe") {
-        Start-Process -FilePath $program.programa -ArgumentList $program.param1,$program.param2,$program.param3,$program.param4 -Wait
+    if (-not (Test-Path $program.Path)) {
+        Write-Warning "Instalador nao encontrado: $($program.Path)"
+        continue
     }
-    elseif ($program -like "*.msi") {
-        Start-Process -FilePath msiexec.exe -ArgumentList "/i `"$program`" /qn" -Wait
-    }
-    else {
-        choco install $program -y
-    }
-}
 
-$process_instala = Start-Process -FilePath powershell.exe -ArgumentList ".\softwares\ninite.exe" -NoNewWindow
-$process_instala.WaitForExit()
+    Write-Host "Executando instalacao: $($program.Name)"
 
-$informacoesDoProcesso = Get-Process -Id $process_instala.Id
-               
-if (Get-Process -Id $process_instala.Id -ErrorAction SilentlyContinue) {
-    Stop-Process -Name $process_instala -Force 
+    if ($program.Type -eq "msi") {
+        Start-Process -FilePath "msiexec.exe" -ArgumentList $program.Arguments -Wait
+        continue
+    }
+
+    Start-Process -FilePath $program.Path -ArgumentList $program.Arguments -Wait
 }

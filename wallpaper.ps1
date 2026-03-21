@@ -55,6 +55,26 @@ function Abrir-SiteParaBaixarAtalho {
     Start-Process $url
 }
 
+function Copy-IfMissing {
+    param (
+        [string]$SourcePath,
+        [string]$DestinationFolder
+    )
+
+    if (-not (Test-Path $SourcePath)) {
+        return
+    }
+
+    if (-not (Test-Path $DestinationFolder)) {
+        New-Item -ItemType Directory -Path $DestinationFolder -Force | Out-Null
+    }
+
+    $destinationPath = Join-Path $DestinationFolder (Split-Path $SourcePath -Leaf)
+    if (-not (Test-Path $destinationPath)) {
+        Copy-Item -Path $SourcePath -Destination $destinationPath
+    }
+}
+
 # Parte principal do script
 # Configurar papel de parede, copiar ícones, etc.
 $osInfo = Get-CimInstance -ClassName Win32_OperatingSystem
@@ -79,7 +99,6 @@ $iconsPath = ".\ico\*.url"
 $iconsPathico = ".\ico\*.ico"
 # Caminho para o desktop do usuário corrente
 $desktopPath = [Environment]::GetFolderPath("Desktop")
-Remove-Item $desktopPath\* -Force -Recurse -ErrorAction SilentlyContinue 2>$null1
 
 # Copiar imagens e ícones
 $targetFolderPath = "C:\Users\Public\Pictures"
@@ -89,15 +108,26 @@ if (-Not (Test-Path $targetFolderPath)) {
 $targetImagePath = [System.IO.Path]::Combine($targetFolderPath, (Get-Item $imagePath).Name)
 Copy-Item $imagePath -Destination $targetImagePath -Force
 Copy-Item $iconsPathico -Destination $targetFolderPath -Force
-$iconesGeral = ".\Desktop\*"
-Copy-Item $iconesGeral -Destination $desktopPath
-Copy-Item $iconsPath -Destination $desktopPath -Force
+$iconesGeral = Get-ChildItem -Path ".\Desktop" -File -ErrorAction SilentlyContinue
+foreach ($icone in $iconesGeral) {
+    Copy-IfMissing -SourcePath $icone.FullName -DestinationFolder $desktopPath
+}
+
+$atalhosWeb = Get-ChildItem -Path ".\ico" -Filter "*.url" -File -ErrorAction SilentlyContinue
+foreach ($atalhoWeb in $atalhosWeb) {
+    Copy-IfMissing -SourcePath $atalhoWeb.FullName -DestinationFolder $desktopPath
+}
+
 Unblock-File $desktopPath\*
 
 # Definir papel de parede
 $SPI_SETDESKWALLPAPER = 0x0014
 $SPIF_UPDATEINIFILE = 0x01
 $SPIF_SENDCHANGE = 0x02
+
+Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name WallpaperStyle -Value "2"
+Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name TileWallpaper -Value "0"
+
 Add-Type -TypeDefinition @"
 using System;
 using System.Runtime.InteropServices;

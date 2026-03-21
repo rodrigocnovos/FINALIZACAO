@@ -50,17 +50,28 @@ if ($?) {
 Remove-Item -Path $assocFile -Force
 
 
-#Inicia o Form para escolher as opções
-Start-Process powershell.exe -ArgumentList "-File update_script.ps1" -NoNewWindow -PassThru
-
 Add-Type -AssemblyName System.Windows.Forms
 
-$form = New-Object Windows.Forms.Form
-$form.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Microfácil Finalização - V2.11 Por Rodrigo Silveira"))
-$form.Size = New-Object Drawing.Size(460, 655)
-$form.StartPosition = "CenterScreen"
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$versionFilePath = Join-Path $scriptDir "launcher.version"
+$appVersion = "0.0.0"
 
-$checkboxes = @()
+if (Test-Path $versionFilePath) {
+    $versionValue = (Get-Content -LiteralPath $versionFilePath -TotalCount 1 -ErrorAction SilentlyContinue).Trim()
+    if ($versionValue) {
+        $appVersion = $versionValue
+    }
+}
+
+$form = New-Object Windows.Forms.Form
+$form.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Microfácil Finalização - V$appVersion Por Rodrigo Silveira"))
+$form.Size = New-Object Drawing.Size(940, 760)
+$form.StartPosition = "CenterScreen"
+$form.AutoScroll = $false
+
+$taskCheckboxes = @()
+$officeOptionRadios = @()
+$programOptionCheckboxes = @()
 
 # Adicionar um rótulo e caixa de texto para nome do técnico
 $label = New-Object Windows.Forms.Label
@@ -84,9 +95,6 @@ $form.Controls.Add($labelOS)
 $textBoxOS = New-Object Windows.Forms.TextBox
 $textBoxOS.Location = New-Object Drawing.Point(250, 50)
 $textBoxOS.Size = New-Object Drawing.Size(100, 30)
-$textBoxOS.Add_TextChanged({
-    $buttonOK.Enabled = ($textBox.Text -match '\p{L}' -and $textBoxOS.Text -match '^\d+$')
-})
 $form.Controls.Add($textBoxOS)
 
 # Função para criar checkboxes dinamicamente
@@ -94,50 +102,194 @@ function CriarCheckBox {
     param (
         [string]$texto,
         [string]$nome,
-        [string]$tag,
-        [int]$posY
+        [int]$posY,
+        [int]$posX = 20,
+        [bool]$marcado = $false,
+        [bool]$habilitado = $true
         )
         $checkbox = New-Object Windows.Forms.CheckBox
         $checkbox.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes($texto))
         $checkbox.AutoSize = $true
         $checkbox.Name = $nome
-        $checkbox.Location = New-Object Drawing.Point(20, $posY)
-        $checkbox.Tag = $tag
+        $checkbox.Checked = $marcado
+        $checkbox.Enabled = $habilitado
+        $checkbox.Location = New-Object Drawing.Point($posX, $posY)
         $form.Controls.Add($checkbox)
         return $checkbox
     }
 
-# Adicionar checkboxes
-$checkboxData = @(
-    @{Texto = "Checar se faltam drivers"; Nome = ".\rel_driver.ps1"; Tag = "-Wait"},
-    @{Texto = "Instalar office 2024 x64 PT-BR ativado"; Nome = ".\office.ps1"; Tag = ""},
-    @{Texto = "Instalar pacote do Ninite + Anydesk"; Nome = ".\programas.ps1"; Tag = ""},
-    @{Texto = "Baixe os programas no nosso servidor"; Nome = ".\Servidor_share.ps1"; Tag = ""},
-    @{Texto = "Forçar atualizações do Windows Update e Loja"; Nome = ".\wupdate.ps1"; Tag = ""},
-    @{Texto = "Selecionar programas para bloqueio no Firewall"; Nome = ".\list_program_firewall.ps1"; Tag = "-Wait"},
-    @{Texto = "Bloquear as atualizações"; Nome = ".\block.ps1"; Tag = "-Wait"},
-    @{Texto = "Ativador Windows 10/11"; Nome = ".\licenca.ps1"; Tag = "-Wait"},
-    @{Texto = "Gerar relatório de saúde de bateria"; Nome = ".\bat.ps1"; Tag = ""},
-    @{Texto = "Abrir sites de testes de Teclado, Câmera e Microfone"; Nome = ".\test.ps1"; Tag = ""},
-    @{Texto = "Script para correções diversas"; Nome = ".\correction.ps1"; Tag = "-Wait"},
-    @{Texto = "Padronização, papel de parede, ícones de contatos e menus"; Nome = ".\wallpaper.ps1"; Tag = ""},
-    @{Texto = "Criar ponto de restauração"; Nome = ".\restorepoint.ps1"; Tag = "-Wait"},
-    @{Texto = "Limpeza de temporários, arquivos da instalação e rastros de uso"; Nome = ".\limpeza.ps1"; Tag = "-Wait"}
-)
+function CriarRadioButton {
+    param (
+        [string]$texto,
+        [string]$nome,
+        [int]$posY,
+        [int]$posX = 40,
+        [bool]$marcado = $false,
+        [bool]$habilitado = $false
+    )
 
-$yPosition = 90
-foreach ($data in $checkboxData) {
-    $checkboxes += CriarCheckBox $data.Texto $data.Nome $data.Tag $yPosition
-    $yPosition += 30
+    $radio = New-Object Windows.Forms.RadioButton
+    $radio.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes($texto))
+    $radio.AutoSize = $true
+    $radio.Name = $nome
+    $radio.Checked = $marcado
+    $radio.Enabled = $habilitado
+    $radio.Location = New-Object Drawing.Point($posX, $posY)
+    $form.Controls.Add($radio)
+    return $radio
 }
 
+function CriarLabelSecao {
+    param (
+        [string]$texto,
+        [int]$posY,
+        [int]$posX = 40
+    )
+
+    $labelSecao = New-Object Windows.Forms.Label
+    $labelSecao.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes($texto))
+    $labelSecao.Location = New-Object Drawing.Point($posX, $posY)
+    $labelSecao.AutoSize = $true
+    $form.Controls.Add($labelSecao)
+    return $labelSecao
+}
+
+function ExisteTrabalhoSelecionado {
+    $standardChecked = ($taskCheckboxes | Where-Object { $_.Checked }).Count -gt 0
+    $officeChecked = $officeInstallCheckbox.Checked
+    $programChecked = $programInstallCheckbox.Checked -and (($programOptionCheckboxes | Where-Object { $_.Checked }).Count -gt 0)
+    return ($standardChecked -or $officeChecked -or $programChecked)
+}
+
+function AtualizarEstadoBotaoOK {
+    $dadosValidos = ($textBox.Text -match '\p{L}' -and $textBoxOS.Text -match '^\d+$')
+    $buttonOK.Enabled = ($dadosValidos -and (ExisteTrabalhoSelecionado))
+}
+
+function Get-StateRoot {
+    return (Join-Path $env:ProgramData "FINALIZACAO")
+}
+
+function Get-StateFilePath {
+    return (Join-Path (Get-StateRoot) "state.json")
+}
+
+function Register-ResumeRunKey {
+    $runKeyPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+    $runnerPath = Join-Path $scriptDir "runner.ps1"
+    $runnerCommand = "powershell.exe -ExecutionPolicy Bypass -File `"$runnerPath`""
+    New-Item -Path $runKeyPath -Force | Out-Null
+    Set-ItemProperty -Path $runKeyPath -Name "FINALIZACAOResume" -Value $runnerCommand
+}
+
+function New-TaskDefinition {
+    param(
+        [string]$Name,
+        [string]$ScriptPath,
+        [string]$ArgumentLine = ""
+    )
+
+    return [PSCustomObject]@{
+        name = $Name
+        scriptPath = $ScriptPath
+        argumentLine = $ArgumentLine
+        status = "pending"
+        rebootCount = 0
+    }
+}
+
+$leftColumnX = 20
+$rightColumnX = 470
+$columnHeaderY = 95
+$leftY = 130
+$rightY = 130
+
+$checkboxData = @(
+    @{Texto = "Checar se faltam drivers"; Nome = ".\rel_driver.ps1"},
+    @{Texto = "Baixe os programas no nosso servidor"; Nome = ".\Servidor_share.ps1"},
+    @{Texto = "Forçar atualizações do Windows Update e Loja"; Nome = ".\wupdate.ps1"},
+    @{Texto = "Selecionar programas para bloqueio no Firewall"; Nome = ".\list_program_firewall.ps1"},
+    @{Texto = "Bloquear as atualizações"; Nome = ".\block.ps1"},
+    @{Texto = "Ativador Windows 10/11"; Nome = ".\licenca.ps1"},
+    @{Texto = "Gerar relatório de saúde de bateria"; Nome = ".\bat.ps1"},
+    @{Texto = "Abrir sites de testes de Teclado, Câmera e Microfone"; Nome = ".\test.ps1"},
+    @{Texto = "Script para correções diversas"; Nome = ".\correction.ps1"},
+    @{Texto = "Padronização, papel de parede, ícones de contatos e menus"; Nome = ".\wallpaper.ps1"},
+    @{Texto = "Criar ponto de restauração"; Nome = ".\restorepoint.ps1"},
+    @{Texto = "Limpeza de temporários, arquivos da instalação e rastros de uso"; Nome = ".\limpeza.ps1"}
+)
+
+[void](CriarLabelSecao "Ações do sistema" $columnHeaderY $leftColumnX)
+[void](CriarLabelSecao "Instalações" $columnHeaderY $rightColumnX)
+
+foreach ($data in $checkboxData) {
+    $taskCheckboxes += CriarCheckBox $data.Texto $data.Nome $leftY $leftColumnX
+    $leftY += 30
+}
+
+$rightIndentX = $rightColumnX + 20
+
+$officeInstallCheckbox = CriarCheckBox "Instalar Microsoft Office PT-BR" "__office__" $rightY $rightColumnX
+$rightY += 28
+[void](CriarLabelSecao "Escolha uma opção de Office abaixo:" $rightY $rightIndentX)
+$rightY += 24
+$officeOptionRadios += CriarRadioButton "Local 2024 x64 PT-BR" "local2024" $rightY $rightIndentX $true $false
+$rightY += 24
+$officeOptionRadios += CriarRadioButton "Microsoft 365 Apps Full x64 PT-BR" "m365full" $rightY $rightIndentX $false $false
+$rightY += 24
+$officeOptionRadios += CriarRadioButton "Microsoft 365 Apps Basic x64 PT-BR" "m365basic" $rightY $rightIndentX $false $false
+$rightY += 24
+$officeOptionRadios += CriarRadioButton "Office Home Business 2024 x64 PT-BR" "homebusiness2024" $rightY $rightIndentX $false $false
+$rightY += 24
+$officeOptionRadios += CriarRadioButton "Office Home 2024 x64 PT-BR" "home2024" $rightY $rightIndentX $false $false
+$rightY += 38
+
+$programInstallCheckbox = CriarCheckBox "Instalar aplicativos adicionais" "__programs__" $rightY $rightColumnX
+$rightY += 28
+[void](CriarLabelSecao "Esses instaladores rodam em sequência, nunca ao mesmo tempo:" $rightY $rightIndentX)
+$rightY += 24
+$programOptionCheckboxes += CriarCheckBox "Ninite AnyDesk + Chrome + Firefox + Foxit Reader" "ninite_web" $rightY $rightIndentX $true $false
+$rightY += 24
+$programOptionCheckboxes += CriarCheckBox "Ninite Glary + Malwarebytes + Revo + TeraCopy" "ninite_tools" $rightY $rightIndentX $false $false
+$rightY += 24
+$programOptionCheckboxes += CriarCheckBox "RustDesk" "rustdesk" $rightY $rightIndentX $true $false
+$rightY += 30
+
+$rightY += 10
+$taskAreaBottom = [Math]::Max($leftY, $rightY)
+
+$officeInstallCheckbox.Add_CheckedChanged({
+    foreach ($radio in $officeOptionRadios) {
+        $radio.Enabled = $officeInstallCheckbox.Checked
+    }
+    AtualizarEstadoBotaoOK
+})
+
+$programInstallCheckbox.Add_CheckedChanged({
+    foreach ($programCheckbox in $programOptionCheckboxes) {
+        $programCheckbox.Enabled = $programInstallCheckbox.Checked
+    }
+    AtualizarEstadoBotaoOK
+})
+
+foreach ($checkbox in ($taskCheckboxes + $programOptionCheckboxes)) {
+    $checkbox.Add_CheckedChanged({ AtualizarEstadoBotaoOK })
+}
+
+foreach ($radio in $officeOptionRadios) {
+    $radio.Add_CheckedChanged({ AtualizarEstadoBotaoOK })
+}
+
+$textBox.Add_TextChanged({ AtualizarEstadoBotaoOK })
+$textBoxOS.Add_TextChanged({ AtualizarEstadoBotaoOK })
+
 # Atualizar dinamicamente a posição de elementos abaixo dos checkboxes
-$progressBarY = $yPosition + 20
+$progressBarY = $taskAreaBottom + 20
 
 # Configurar barra de progresso
 $progressBar = New-Object Windows.Forms.ProgressBar
 $progressBar.Location = New-Object Drawing.Point(20, $progressBarY)
-$progressBar.Size = New-Object Drawing.Size(400, 20)
+$progressBar.Size = New-Object Drawing.Size(880, 20)
 $progressBar.Minimum = 0
 $progressBar.Maximum = 100
 $progressBar.Value = 0
@@ -161,61 +313,72 @@ $buttonY = $progressBarY + 40
 
 # Botão OK
 $buttonOK = New-Object Windows.Forms.Button
-$buttonOK.Location = New-Object Drawing.Point(80, $buttonY)
+$buttonOK.Location = New-Object Drawing.Point(560, $buttonY)
 $buttonOK.Size = New-Object Drawing.Size(80, 30)
 $buttonOK.Text = "OK"
 $buttonOK.Enabled = $false
 $buttonOK.Add_Click({
-    # Exigir desativação do antivírus
-    Start-Process "powershell.exe" -ArgumentList ".\defender.ps1" -Wait -NoNewWindow
-    
-    $tecnicoOS = $textBox.Text
-    $total = ($checkboxes | Where-Object { $_.Checked }).Count
-    $atual = 0
-    
-    # Função para execução dos scripts e atualizar a interface
-# Função para execução dos scripts e atualizar a interface
-function ExecuteSelectedScripts {
-    param ($scriptPath, $text, $tag)
-    if (Test-Path $scriptPath) {
-        $status.Text = "Executando: $text"
-        $process = Start-Process powershell.exe -ArgumentList "-File $scriptPath" -NoNewWindow -PassThru
-        # Monitorar o status da execução para atualizar a barra
-        do {
-            try {
-                # Tenta atualizar a interface de progresso
-                $form.Invoke({
-                    param ($atual, $total)
-                    AtualizarBarra $atual $total
-                }, $atual, $total)
-            } catch {
-                # Ignora qualquer erro ao invocar o método de atualização da interface
-                # Utiliza o -ErrorAction SilentlyContinue para suprimir qualquer erro
-            }
-            Start-Sleep -Seconds 1
-        } while (!$process.HasExited)  # Aguarda o processo terminar
-        if ($tag) { $process.WaitForExit() }
-    } else {
-        Write-Host "Script não encontrado: $scriptPath"
+    $selectedProgramKeys = @()
+    if ($programInstallCheckbox.Checked) {
+        $selectedProgramKeys = $programOptionCheckboxes | Where-Object { $_.Checked } | ForEach-Object { $_.Name }
     }
-}
-    
-    foreach ($checkbox in $checkboxes) {
+
+    if ($programInstallCheckbox.Checked -and $selectedProgramKeys.Count -eq 0) {
+        [System.Windows.Forms.MessageBox]::Show("Selecione pelo menos um instalador adicional.", "AVISO", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Warning)
+        return
+    }
+
+    $tasks = @()
+    $tasks += New-TaskDefinition -Name "Desativar antivirus" -ScriptPath (Join-Path $scriptDir "defender.ps1")
+
+    foreach ($checkbox in $taskCheckboxes) {
         if ($checkbox.Checked) {
-            $atual++
-            AtualizarBarra $atual $total
-            ExecuteSelectedScripts $checkbox.Name $checkbox.Text $checkbox.Tag
+            $tasks += New-TaskDefinition -Name $checkbox.Text -ScriptPath (Join-Path $scriptDir ($checkbox.Name.TrimStart(".\")))
         }
     }
-    
-    [System.Windows.Forms.MessageBox]::Show([System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Execução concluída, mas pode haver tarefas em segundo plano!")), "AVISO", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
+
+    if ($officeInstallCheckbox.Checked) {
+        $selectedOffice = $officeOptionRadios | Where-Object { $_.Checked } | Select-Object -First 1
+        if ($selectedOffice) {
+            $tasks += New-TaskDefinition -Name "Instalação do Office" -ScriptPath (Join-Path $scriptDir "office.ps1") -ArgumentLine "-SelectionKey $($selectedOffice.Name)"
+        }
+    }
+
+    if ($programInstallCheckbox.Checked -and $selectedProgramKeys.Count -gt 0) {
+        $selectedProgramsCsv = ($selectedProgramKeys -join ",")
+        $tasks += New-TaskDefinition -Name "Instaladores adicionais" -ScriptPath (Join-Path $scriptDir "programas.ps1") -ArgumentLine "-SelectionKeysCsv `"$selectedProgramsCsv`""
+    }
+
+    if ($tasks.Count -eq 0) {
+        [System.Windows.Forms.MessageBox]::Show("Nenhuma etapa foi selecionada.", "AVISO", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Warning)
+        return
+    }
+
+    $stateRoot = Get-StateRoot
+    if (-not (Test-Path $stateRoot)) {
+        New-Item -ItemType Directory -Path $stateRoot -Force | Out-Null
+    }
+
+    $state = [PSCustomObject]@{
+        version = 1
+        createdAt = (Get-Date).ToString("o")
+        appVersion = $appVersion
+        tecnico = $textBox.Text
+        os = $textBoxOS.Text
+        tasks = $tasks
+    }
+
+    $state | ConvertTo-Json -Depth 8 | Set-Content -Path (Get-StateFilePath) -Encoding UTF8
+    Register-ResumeRunKey
+
+    Start-Process -FilePath "powershell.exe" -ArgumentList "-ExecutionPolicy Bypass -File `"$((Join-Path $scriptDir "runner.ps1"))`"" -NoNewWindow
     $form.Close()
 })
 $form.Controls.Add($buttonOK)
 
 # Botão Cancelar
 $buttonCancel = New-Object Windows.Forms.Button
-$buttonCancel.Location = New-Object Drawing.Point(170, $buttonY)
+$buttonCancel.Location = New-Object Drawing.Point(650, $buttonY)
 $buttonCancel.Size = New-Object Drawing.Size(80, 30)
 $buttonCancel.Text = "Cancelar"
 $buttonCancel.Add_Click({ $form.Close() })
@@ -223,7 +386,7 @@ $form.Controls.Add($buttonCancel)
 
 # Botão update
 $buttonUpdate = New-Object Windows.Forms.Button
-$buttonUpdate.Location = New-Object Drawing.Point(300, $buttonY)
+$buttonUpdate.Location = New-Object Drawing.Point(760, $buttonY)
 $buttonUpdate.Size = New-Object Drawing.Size(80, 30)
 $buttonUpdate.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Checar atualizações?"))
 $buttonUpdate.AutoSize = $true
@@ -232,4 +395,5 @@ $buttonUpdate.Add_Click({
 })
 $form.Controls.Add($buttonUpdate)
 
+AtualizarEstadoBotaoOK
 $form.ShowDialog()
