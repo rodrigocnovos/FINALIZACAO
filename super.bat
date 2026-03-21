@@ -5,7 +5,7 @@ setlocal EnableDelayedExpansion
 set "SCRIPT_DIR=%~dp0"
 if "%SCRIPT_DIR:~-1%"=="\" set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
 set "REPO_NAME=FINALIZACAO"
-set "DEFAULT_BRANCH=development"
+set "DEFAULT_BRANCH=main"
 set "VERSION_FILE=launcher.version"
 set "ZIP_URL=https://github.com/rodrigocnovos/FINALIZACAO/archive/refs/heads/%DEFAULT_BRANCH%.zip"
 set "RAW_VERSION_URL=https://raw.githubusercontent.com/rodrigocnovos/FINALIZACAO/%DEFAULT_BRANCH%/%VERSION_FILE%"

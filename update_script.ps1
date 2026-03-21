@@ -9,7 +9,7 @@ if (-not (Test-Path $gitExecutable)) {
 
 $owner = "rodrigocnovos"
 $repo = "FINALIZACAO"
-$branch = "development"
+$branch = "main"
 $versionFile = "launcher.version"
 $localVersionPath = Join-Path $scriptDir $versionFile
 $rawVersionUrl = "https://raw.githubusercontent.com/$owner/$repo/$branch/$versionFile"
