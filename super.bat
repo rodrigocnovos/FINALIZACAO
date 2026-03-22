@@ -6,14 +6,18 @@ set "SCRIPT_DIR=%~dp0"
 if "%SCRIPT_DIR:~-1%"=="\" set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
 set "REPO_NAME=FINALIZACAO"
 set "DEFAULT_BRANCH=main"
+set "UPDATE_BRANCH=%DEFAULT_BRANCH%"
+set "BRANCH_OVERRIDE_FILE=%SCRIPT_DIR%\branch_update.ini"
 set "VERSION_FILE=launcher.version"
-set "ZIP_URL=https://github.com/rodrigocnovos/FINALIZACAO/archive/refs/heads/%DEFAULT_BRANCH%.zip"
-set "RAW_VERSION_URL=https://raw.githubusercontent.com/rodrigocnovos/FINALIZACAO/%DEFAULT_BRANCH%/%VERSION_FILE%"
 set "WINDOW_TITLE=Launcher FINALIZACAO"
 
 cd /d "%SCRIPT_DIR%"
 title %WINDOW_TITLE% - Iniciando
 echo [1/5] Iniciando launcher...
+
+call :read_update_branch
+set "ZIP_URL=https://github.com/rodrigocnovos/FINALIZACAO/archive/refs/heads/%UPDATE_BRANCH%.zip"
+set "RAW_VERSION_URL=https://raw.githubusercontent.com/rodrigocnovos/FINALIZACAO/%UPDATE_BRANCH%/%VERSION_FILE%"
 
 set "GIT_EXE=git"
 if exist "%SCRIPT_DIR%\softwares\PortableGit\bin\git.exe" set "GIT_EXE=%SCRIPT_DIR%\softwares\PortableGit\bin\git.exe"
@@ -21,7 +25,7 @@ if exist "%SCRIPT_DIR%\softwares\PortableGit\bin\git.exe" set "GIT_EXE=%SCRIPT_D
 call :read_local_version
 
 if exist "%SCRIPT_DIR%\.git" (
-    set "CURRENT_BRANCH="
+    set "CURRENT_BRANCH=%UPDATE_BRANCH%"
     set "CURRENT_REMOTE="
     set "REMOTE_VERSION="
     title %WINDOW_TITLE% - Verificando Git
@@ -32,9 +36,6 @@ if exist "%SCRIPT_DIR%\.git" (
         echo Repositorio Git invalido. Tentando atualizacao por ZIP...
         goto update_from_zip
     )
-
-    for /f "delims=" %%i in ('"%GIT_EXE%" -C "%SCRIPT_DIR%" branch --show-current 2^>nul') do set "CURRENT_BRANCH=%%i"
-    if not defined CURRENT_BRANCH set "CURRENT_BRANCH=%DEFAULT_BRANCH%"
 
     for /f "delims=" %%i in ('"%GIT_EXE%" -C "%SCRIPT_DIR%" config --get branch.!CURRENT_BRANCH!.remote 2^>nul') do set "CURRENT_REMOTE=%%i"
     if not defined CURRENT_REMOTE set "CURRENT_REMOTE=origin"
@@ -175,6 +176,23 @@ for /f "usebackq delims=" %%i in ("%SCRIPT_DIR%\%VERSION_FILE%") do (
     )
 )
 set "LOCAL_VERSION_FOUND="
+goto :eof
+
+:read_update_branch
+if not exist "%BRANCH_OVERRIDE_FILE%" goto :eof
+for /f "usebackq tokens=* delims=" %%i in ("%BRANCH_OVERRIDE_FILE%") do (
+    if not defined BRANCH_OVERRIDE_LINE (
+        set "BRANCH_OVERRIDE_LINE=%%i"
+    )
+)
+if not defined BRANCH_OVERRIDE_LINE goto :eof
+set "BRANCH_OVERRIDE_LINE=!BRANCH_OVERRIDE_LINE: =!"
+if /i "!BRANCH_OVERRIDE_LINE:~0,7!"=="branch=" (
+    set "UPDATE_BRANCH=!BRANCH_OVERRIDE_LINE:~7!"
+) else (
+    set "UPDATE_BRANCH=!BRANCH_OVERRIDE_LINE!"
+)
+set "BRANCH_OVERRIDE_LINE="
 goto :eof
 
 :normalize_version

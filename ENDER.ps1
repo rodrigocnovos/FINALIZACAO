@@ -329,11 +329,17 @@ $buttonOK.Add_Click({
     }
 
     $tasks = @()
+    $licenseTask = $null
     $tasks += New-TaskDefinition -Name "Desativar antivirus" -ScriptPath (Join-Path $scriptDir "defender.ps1")
 
     foreach ($checkbox in $taskCheckboxes) {
         if ($checkbox.Checked) {
-            $tasks += New-TaskDefinition -Name $checkbox.Text -ScriptPath (Join-Path $scriptDir ($checkbox.Name.TrimStart(".\")))
+            $taskDefinition = New-TaskDefinition -Name $checkbox.Text -ScriptPath (Join-Path $scriptDir ($checkbox.Name.TrimStart(".\")))
+            if ($checkbox.Name -eq ".\licenca.ps1") {
+                $licenseTask = $taskDefinition
+            } else {
+                $tasks += $taskDefinition
+            }
         }
     }
 
@@ -347,6 +353,10 @@ $buttonOK.Add_Click({
     if ($programInstallCheckbox.Checked -and $selectedProgramKeys.Count -gt 0) {
         $selectedProgramsCsv = ($selectedProgramKeys -join ",")
         $tasks += New-TaskDefinition -Name "Instaladores adicionais" -ScriptPath (Join-Path $scriptDir "programas.ps1") -ArgumentLine "-SelectionKeysCsv `"$selectedProgramsCsv`""
+    }
+
+    if ($licenseTask) {
+        $tasks += $licenseTask
     }
 
     if ($tasks.Count -eq 0) {

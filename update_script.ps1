@@ -10,8 +10,25 @@ if (-not (Test-Path $gitExecutable)) {
 $owner = "rodrigocnovos"
 $repo = "FINALIZACAO"
 $branch = "main"
+$branchOverrideFile = Join-Path $scriptDir "branch_update.ini"
 $versionFile = "launcher.version"
 $localVersionPath = Join-Path $scriptDir $versionFile
+
+function Get-UpdateBranch {
+    if (Test-Path $branchOverrideFile) {
+        $rawValue = (Get-Content -LiteralPath $branchOverrideFile -TotalCount 1 -ErrorAction SilentlyContinue).Trim()
+        if ($rawValue) {
+            if ($rawValue -match '^\s*branch\s*=\s*(.+)\s*$') {
+                return $matches[1].Trim()
+            }
+            return $rawValue
+        }
+    }
+
+    return $branch
+}
+
+$branch = Get-UpdateBranch
 $rawVersionUrl = "https://raw.githubusercontent.com/$owner/$repo/$branch/$versionFile"
 $zipUrl = "https://github.com/$owner/$repo/archive/refs/heads/$branch.zip"
 
