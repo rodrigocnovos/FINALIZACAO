@@ -37,9 +37,10 @@ Write-RunnerLog "Runner iniciado."
 
 $runnerForm = New-Object System.Windows.Forms.Form
 $runnerForm.Text = "Retomando finalizacao"
-$runnerForm.Size = New-Object System.Drawing.Size(560, 220)
+$runnerForm.Size = New-Object System.Drawing.Size(560, 255)
 $runnerForm.StartPosition = "Manual"
-$runnerForm.TopMost = $true
+$runnerForm.TopMost = $false
+$runnerForm.ShowInTaskbar = $true
 $workingArea = [System.Windows.Forms.Screen]::PrimaryScreen.WorkingArea
 $runnerForm.Location = New-Object System.Drawing.Point(
     [Math]::Max(0, $workingArea.Right - $runnerForm.Width - 20),
@@ -71,6 +72,12 @@ $runnerProgressBar.Minimum = 0
 $runnerProgressBar.Maximum = 100
 $runnerProgressBar.Value = 0
 $runnerForm.Controls.Add($runnerProgressBar)
+
+$abortButton = New-Object System.Windows.Forms.Button
+$abortButton.Text = "Abortar automacao"
+$abortButton.Location = New-Object System.Drawing.Point(380, 175)
+$abortButton.Size = New-Object System.Drawing.Size(140, 32)
+$runnerForm.Controls.Add($abortButton)
 
 function Update-RunnerUi {
     param(
@@ -120,6 +127,69 @@ function Set-StateProperty {
 function Remove-ResumeRunKey {
     Remove-ItemProperty -Path $runKeyPath -Name $runKeyName -ErrorAction SilentlyContinue
 }
+
+function Stop-PendingRestart {
+    Start-Process -FilePath "shutdown.exe" -ArgumentList "/a" -WindowStyle Hidden -ErrorAction SilentlyContinue | Out-Null
+}
+
+function Stop-FinalizacaoPowerShellProcesses {
+    $scriptMarkers = @(
+        (Join-Path $scriptDir "runner.ps1"),
+        (Join-Path $scriptDir "ENDER.ps1"),
+        (Join-Path $scriptDir "Testes_simulador_humano.ps1"),
+        $stateRoot
+    ) | Where-Object { $_ } | ForEach-Object { $_.ToLowerInvariant() }
+
+    $processes = Get-CimInstance Win32_Process -Filter "Name = 'powershell.exe' OR Name = 'pwsh.exe'" -ErrorAction SilentlyContinue
+    foreach ($process in @($processes)) {
+        if ($process.ProcessId -eq $PID) {
+            continue
+        }
+
+        $commandLine = [string]$process.CommandLine
+        if (-not $commandLine) {
+            continue
+        }
+
+        $commandLineLower = $commandLine.ToLowerInvariant()
+        if ($scriptMarkers | Where-Object { $commandLineLower.Contains($_) }) {
+            Stop-Process -Id $process.ProcessId -Force -ErrorAction SilentlyContinue
+        }
+    }
+}
+
+function Abort-FinalizacaoAutomation {
+    Write-RunnerLog "Aborto manual solicitado pelo usuario."
+    Stop-PendingRestart
+    Remove-ResumeRunKey
+
+    if (Test-Path $stateFile) {
+        Remove-Item -Path $stateFile -Force -ErrorAction SilentlyContinue
+    }
+
+    Stop-FinalizacaoPowerShellProcesses
+    $runnerForm.Close()
+    [System.Windows.Forms.MessageBox]::Show(
+        "Automacao interrompida. Os PowerShells da FINALIZACAO foram encerrados e a retomada automatica foi removida.",
+        "Finalizacao",
+        [System.Windows.Forms.MessageBoxButtons]::OK,
+        [System.Windows.Forms.MessageBoxIcon]::Information
+    ) | Out-Null
+    exit 0
+}
+
+$abortButton.Add_Click({
+    $confirmation = [System.Windows.Forms.MessageBox]::Show(
+        "Abortar a automacao agora? Isso encerra os PowerShells da FINALIZACAO e cancela a retomada automatica.",
+        "Finalizacao",
+        [System.Windows.Forms.MessageBoxButtons]::YesNo,
+        [System.Windows.Forms.MessageBoxIcon]::Warning
+    )
+
+    if ($confirmation -eq [System.Windows.Forms.DialogResult]::Yes) {
+        Abort-FinalizacaoAutomation
+    }
+})
 
 function Get-SafeFileName {
     param([string]$Value)

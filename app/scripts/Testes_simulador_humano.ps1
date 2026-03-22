@@ -6,13 +6,62 @@ Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
 if (-not ("Win32Functions.WindowActivator" -as [type])) {
-    Add-Type -MemberDefinition @"
-[DllImport("user32.dll")]
-public static extern bool SetForegroundWindow(IntPtr hWnd);
+    Add-Type -TypeDefinition @"
+    using System;
+    using System.Runtime.InteropServices;
+    
+    namespace Win32Functions {
+        public static class WindowActivator {
+            [DllImport("user32.dll")]
+            public static extern bool SetForegroundWindow(IntPtr hWnd);
 
-[DllImport("user32.dll")]
-public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
-"@ -Name "WindowActivator" -Namespace "Win32Functions"
+            [DllImport("user32.dll")]
+            public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
+
+            [DllImport("kernel32.dll")]
+            public static extern IntPtr GetConsoleWindow();
+
+            [DllImport("user32.dll")]
+            public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+        }
+    }
+"@
+}
+
+# Forçar visibilidade da janela do console se existir (ajuda quando chamado pelo runner oculto)
+$consoleHandle = [Win32Functions.WindowActivator]::GetConsoleWindow()
+if ($consoleHandle -ne [IntPtr]::Zero) {
+    [Win32Functions.WindowActivator]::ShowWindow($consoleHandle, 5) # SW_SHOW
+    [Win32Functions.WindowActivator]::SetForegroundWindow($consoleHandle) | Out-Null
+}
+
+if (-not ("Win32Functions.InputSimulator" -as [type])) {
+    Add-Type -TypeDefinition @"
+    using System;
+    using System.Runtime.InteropServices;
+
+    namespace Win32Functions {
+        public struct RECT
+        {
+            public int Left;
+            public int Top;
+            public int Right;
+            public int Bottom;
+        }
+
+        public static class InputSimulator
+        {
+            [DllImport("user32.dll")]
+            public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
+            [DllImport("user32.dll")]
+            public static extern bool SetCursorPos(int X, int Y);
+
+            [DllImport("user32.dll")]
+            public static extern void mouse_event(uint dwFlags, uint dx, uint dy, int dwData, UIntPtr dwExtraInfo);
+        }
+    }
+"@
 }
 
 # Obter o diretório atual do script
@@ -39,6 +88,8 @@ function Set-ProcessWindowToForeground {
         Select-Object -First 1
 
         if ($windowProcess) {
+            # Truque para burlar restrição de SetForegroundWindow quando o chamador está em segundo plano
+            try { [System.Windows.Forms.SendKeys]::SendWait("%") } catch {}
             [Win32Functions.WindowActivator]::ShowWindowAsync([IntPtr]$windowProcess.MainWindowHandle, 9) | Out-Null
             [Win32Functions.WindowActivator]::SetForegroundWindow([IntPtr]$windowProcess.MainWindowHandle) | Out-Null
             return $true
@@ -136,13 +187,98 @@ function Get-PreferredBrowserPath {
 
 function Invoke-BrowserFeedScroll {
     param(
-        [int]$ScrollCount = 3
+        [int]$ScrollCount = 3,
+        [string]$BrowserProcessName
     )
 
+    if ($BrowserProcessName) {
+        # Garante que o navegador esteja em primeiro plano
+        $windowProcess = Get-Process -Name $BrowserProcessName -ErrorAction SilentlyContinue |
+            Where-Object { $_.MainWindowHandle -ne 0 } |
+            Select-Object -First 1
+
+        if ($windowProcess) {
+            Set-ProcessWindowToForeground -ProcessName $BrowserProcessName -RetryCount 5 -RetryDelayMs 300 | Out-Null
+            
+            # Centralizar o mouse no navegador para garantir que o scroll funcione na janela correta
+            $rect = New-Object Win32Functions.RECT
+            if ([Win32Functions.InputSimulator]::GetWindowRect([IntPtr]$windowProcess.MainWindowHandle, [ref]$rect)) {
+                $centerX = [int]($rect.Left + ($rect.Right - $rect.Left) / 2)
+                $centerY = [int]($rect.Top + ($rect.Bottom - $rect.Top) / 2)
+                [Win32Functions.InputSimulator]::SetCursorPos($centerX, $centerY)
+                Start-Sleep -Milliseconds 200
+            }
+        }
+        Start-Sleep -Milliseconds 500
+    }
+
+    Write-Output "Simulando rolagem de página..."
+    
     for ($scrollIndex = 0; $scrollIndex -lt $ScrollCount; $scrollIndex++) {
+        # Usar mouse_event para scroll (mais robusto que SendKeys em alguns sites)
+        for ($s = 0; $s -lt 8; $s++) {
+            [Win32Functions.InputSimulator]::mouse_event(0x0800, 0, 0, -120, [UIntPtr]::Zero)
+            Start-Sleep -Milliseconds 50
+        }
+        
+        # Complemento com PageDown/Down para garantir movimento
         [System.Windows.Forms.SendKeys]::SendWait("{PGDN}")
+        
+        # Pequena variação humana com setas para baixo
+        $extraDowns = Get-Random -Minimum 1 -Maximum 3
+        for ($i = 0; $i -lt $extraDowns; $i++) {
+            Start-Sleep -Milliseconds (Get-Random -Minimum 100 -Maximum 300)
+            [System.Windows.Forms.SendKeys]::SendWait("{DOWN}")
+        }
+        
         Start-Sleep -Seconds (Get-Random -Minimum 2 -Maximum 4)
     }
+}
+
+function Set-ClipboardTextSafe {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Text
+    )
+
+    try {
+        Set-Clipboard -Value $Text
+        return $true
+    }
+    catch {
+        try {
+            [System.Windows.Forms.Clipboard]::SetText($Text)
+            return $true
+        }
+        catch {
+            Write-Warning "Falha ao copiar URL para a area de transferencia: $($_.Exception.Message)"
+            return $false
+        }
+    }
+}
+
+function Open-BrowserUrlInActiveWindow {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Url,
+        [string]$BrowserProcessName
+    )
+
+    if ($BrowserProcessName) {
+        Set-ProcessWindowToForeground -ProcessName $BrowserProcessName -RetryCount 10 -RetryDelayMs 300 | Out-Null
+    }
+
+    if (-not (Set-ClipboardTextSafe -Text $Url)) {
+        return $false
+    }
+
+    Start-Sleep -Milliseconds 500
+    [System.Windows.Forms.SendKeys]::SendWait("^{l}")
+    Start-Sleep -Milliseconds 300
+    [System.Windows.Forms.SendKeys]::SendWait("^v")
+    Start-Sleep -Milliseconds 300
+    [System.Windows.Forms.SendKeys]::SendWait("{ENTER}")
+    return $true
 }
 
 function Confirm-Prime95TortureDialog {
@@ -458,30 +594,6 @@ $urls = @(
     "https://stackoverflow.com/"
 )
 
-$feedUrlPatterns = @(
-    "uol.com.br",
-    "g1.globo.com",
-    "terra.com.br",
-    "estadao.com.br",
-    "cnnbrasil.com.br",
-    "metropoles.com",
-    "reddit.com",
-    "amazon.com.br",
-    "mercadolivre.com.br",
-    "shopee.com.br",
-    "magazineluiza.com.br",
-    "americanas.com.br",
-    "casasbahia.com.br",
-    "kabum.com.br",
-    "globo.com",
-    "tecmundo.com.br",
-    "omelete.com.br",
-    "adrenaline.com.br",
-    "tudocelular.com",
-    "infomoney.com.br",
-    "investing.com"
-)
-
 for ($index = 0; $index -lt $urls.Count; $index++) {
     $url = $urls[$index]
     Write-Output "Acessando: $url"
@@ -499,17 +611,17 @@ for ($index = 0; $index -lt $urls.Count; $index++) {
         }
     }
     else {
-        Start-Process -FilePath $browserPath -ArgumentList @("--new-tab", $url) | Out-Null
-        if ($browserProcessName) {
-            Set-ProcessWindowToForeground -ProcessName $browserProcessName -RetryCount 10 -RetryDelayMs 300 | Out-Null
+        if (-not (Open-BrowserUrlInActiveWindow -Url $url -BrowserProcessName $browserProcessName)) {
+            Write-Warning "Falha ao navegar para $url na janela ativa do navegador."
+            continue
         }
     }
 
     Start-Sleep -Seconds (Get-Random -Minimum 6 -Maximum 10)
-
-    if ($feedUrlPatterns | Where-Object { $url -match [regex]::Escape($_) }) {
-        Invoke-BrowserFeedScroll -ScrollCount 3
+    if ($browserProcessName) {
+        Set-ProcessWindowToForeground -ProcessName $browserProcessName -RetryCount 10 -RetryDelayMs 300 | Out-Null
     }
+    Invoke-BrowserFeedScroll -ScrollCount 3 -BrowserProcessName $browserProcessName
 }
 
 # ==========================================
@@ -545,12 +657,7 @@ try {
     # Obter a janela do Excel e ativar
     $excelWindow = Get-Process excel | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1
     if ($excelWindow) {
-        $Signature = @"
-[DllImport("user32.dll")]
-public static extern bool SetForegroundWindow(IntPtr hWnd);
-"@
-        $Win32 = Add-Type -MemberDefinition $Signature -Name "Win32Excel" -Namespace "Win32Functions" -PassThru
-        $Win32::SetForegroundWindow($excelWindow.MainWindowHandle) | Out-Null
+        Set-WindowHandleToForeground -Handle ([IntPtr]$excelWindow.MainWindowHandle) | Out-Null
     }
 
     Start-Sleep -Seconds 2
@@ -596,17 +703,11 @@ else {
             try {
                 $slideShowWindow = $PowerPoint.SlideShowWindows.Item(1)
                 if ($slideShowWindow -and $slideShowWindow.HWND) {
-                    $powerPointProcess = Get-Process -Name "powerpnt" -ErrorAction SilentlyContinue | Sort-Object StartTime -Descending | Select-Object -First 1
-                    if ($powerPointProcess) {
-                        $shell.AppActivate($powerPointProcess.Id) | Out-Null
-                    }
                     Set-WindowHandleToForeground -Handle ([IntPtr]$slideShowWindow.HWND) | Out-Null
                     break
                 }
             }
-            catch {
-                # Aguarda a janela de slideshow ser criada antes de tentar ativar.
-            }
+            catch { }
         }
 
         Start-Sleep -Seconds (Get-Random -Minimum 10 -Maximum 20)
@@ -643,12 +744,7 @@ try {
 
     $wordWindow = Get-Process winword | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1
     if ($wordWindow) {
-        $SignatureWord = @"
-[DllImport("user32.dll")]
-public static extern bool SetForegroundWindow(IntPtr hWnd);
-"@
-        $Win32Word = Add-Type -MemberDefinition $SignatureWord -Name "Win32Word" -Namespace "Win32Functions" -PassThru
-        $Win32Word::SetForegroundWindow($wordWindow.MainWindowHandle) | Out-Null
+        Set-WindowHandleToForeground -Handle ([IntPtr]$wordWindow.MainWindowHandle) | Out-Null
     }
     Start-Sleep -Seconds 2
 
@@ -656,7 +752,7 @@ public static extern bool SetForegroundWindow(IntPtr hWnd);
     
     foreach ($char in $texto.ToCharArray()) {
         [System.Windows.Forms.SendKeys]::SendWait($char)
-        # Randomidade extrema na digitação humana (as vezes um pequeno tropeço e engasgo)
+        # Randomidade extrema na digitação humana
         if ((Get-Random -Minimum 1 -Maximum 100) -gt 90) {
             Start-Sleep -Milliseconds (Get-Random -Minimum 300 -Maximum 800)
         }
@@ -708,7 +804,7 @@ foreach ($proc in $processToClose) {
     Get-Process -Name $proc -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 }
 
-# Fechar gentilmente janelas do Explorer criadas pelo teste
+# Fechar gentilmente janelas do Explorer
 try {
     $shell = New-Object -ComObject Shell.Application
     if ($shell) {
@@ -724,9 +820,9 @@ catch { }
 Write-Output "Todos os artefatos de teste foram encerrados e o sistema está limpo."
 
 if (-not $SkipRestart) {
-    Write-Output "Reiniciando o computador em 10 segundos para repetir o ciclo de teste..."
+    Write-Output "Reiniciando o computador em 10 segundos..."
     shutdown.exe /r /t 10 /f /c "FINALIZACAO - reinicio automatico do ciclo Testes_simulador_humano"
 }
 else {
-    Write-Output "Reinicio automatico ignorado por parametro."
+    Write-Output "Reinicio automatico ignorado."
 }

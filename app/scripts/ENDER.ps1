@@ -188,6 +188,37 @@ function Register-ResumeRunKey {
     Set-ItemProperty -Path $runKeyPath -Name "FINALIZACAOResume" -Value $runnerCommand
 }
 
+function Stop-FinalizacaoAutomation {
+    $runKeyPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+    $scriptMarkers = @(
+        (Join-Path $scriptDir "runner.ps1"),
+        (Join-Path $scriptDir "ENDER.ps1"),
+        (Join-Path $scriptDir "Testes_simulador_humano.ps1"),
+        (Get-StateRoot)
+    ) | Where-Object { $_ } | ForEach-Object { $_.ToLowerInvariant() }
+
+    Start-Process -FilePath "shutdown.exe" -ArgumentList "/a" -WindowStyle Hidden -ErrorAction SilentlyContinue | Out-Null
+    Remove-ItemProperty -Path $runKeyPath -Name "FINALIZACAOResume" -ErrorAction SilentlyContinue
+    Remove-Item -Path (Get-StateFilePath) -Force -ErrorAction SilentlyContinue
+
+    $processes = Get-CimInstance Win32_Process -Filter "Name = 'powershell.exe' OR Name = 'pwsh.exe'" -ErrorAction SilentlyContinue
+    foreach ($process in @($processes)) {
+        if ($process.ProcessId -eq $PID) {
+            continue
+        }
+
+        $commandLine = [string]$process.CommandLine
+        if (-not $commandLine) {
+            continue
+        }
+
+        $commandLineLower = $commandLine.ToLowerInvariant()
+        if ($scriptMarkers | Where-Object { $commandLineLower.Contains($_) }) {
+            Stop-Process -Id $process.ProcessId -Force -ErrorAction SilentlyContinue
+        }
+    }
+}
+
 function New-TaskDefinition {
     param(
         [string]$Name,
@@ -378,7 +409,7 @@ $buttonOK.Add_Click({
         $runnerStdOut = Join-Path $logRoot "runner_stdout.log"
         $runnerStdErr = Join-Path $logRoot "runner_stderr.log"
         "[{0}] ENDER iniciou o runner." -f (Get-Date -Format "yyyy-MM-dd HH:mm:ss") | Out-File -LiteralPath (Join-Path $logRoot "ender.log") -Append -Encoding UTF8
-        Start-Process -FilePath "powershell.exe" -ArgumentList "-ExecutionPolicy Bypass -File `"$runnerPath`"" -WindowStyle Hidden -RedirectStandardOutput $runnerStdOut -RedirectStandardError $runnerStdErr
+        Start-Process -FilePath "powershell.exe" -ArgumentList "-ExecutionPolicy Bypass -File `"$runnerPath`"" -RedirectStandardOutput $runnerStdOut -RedirectStandardError $runnerStdErr
         $form.Close()
     })
 $form.Controls.Add($buttonOK)
@@ -401,6 +432,32 @@ $buttonUpdate.Add_Click({
         Start-Process powershell.exe -ArgumentList "-File `"$((Join-Path $scriptDir "update_script.ps1"))`"" -NoNewWindow -PassThru
     })
 $form.Controls.Add($buttonUpdate)
+
+$buttonKill = New-Object Windows.Forms.Button
+$buttonKill.Location = New-Object Drawing.Point(20, $buttonY)
+$buttonKill.Size = New-Object Drawing.Size(170, 30)
+$buttonKill.Text = "Abortar automacao ativa"
+$buttonKill.Add_Click({
+        $confirmation = [System.Windows.Forms.MessageBox]::Show(
+            "Encerrar agora os PowerShells da FINALIZACAO, cancelar reinicio pendente e remover a retomada automatica?",
+            "FINALIZACAO",
+            [System.Windows.Forms.MessageBoxButtons]::YesNo,
+            [System.Windows.Forms.MessageBoxIcon]::Warning
+        )
+
+        if ($confirmation -ne [System.Windows.Forms.DialogResult]::Yes) {
+            return
+        }
+
+        Stop-FinalizacaoAutomation
+        [System.Windows.Forms.MessageBox]::Show(
+            "Automacao ativa interrompida.",
+            "FINALIZACAO",
+            [System.Windows.Forms.MessageBoxButtons]::OK,
+            [System.Windows.Forms.MessageBoxIcon]::Information
+        ) | Out-Null
+    })
+$form.Controls.Add($buttonKill)
 
 AtualizarEstadoBotaoOK
 $form.ShowDialog()
