@@ -73,7 +73,32 @@ function Install-OfficeFromConfig {
         throw "Arquivo de configuracao nao encontrado: $($Option.ConfigPath)"
     }
 
-    Start-Process -FilePath $officeExe -ArgumentList "/configure `"$($Option.ConfigPath)`"", "/activate" -Wait
+    Write-Host "Iniciando instalacao do Office e configurando automacao de tela (OInstall_x64.exe)..."
+    $process = Start-Process -FilePath $officeExe -ArgumentList "/configure `"$($Option.ConfigPath)`"", "/activate" -PassThru
+    
+    Add-Type -AssemblyName UIAutomationClient
+    $root = [System.Windows.Automation.AutomationElement]::RootElement
+    
+    $officeFinished = $false
+    while (-not $process.HasExited) {
+        Start-Sleep -Seconds 5
+        $condProcess = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ProcessIdProperty, $process.Id)
+        $window = $root.FindFirst([System.Windows.Automation.TreeScope]::Children, $condProcess)
+        if ($window) {
+            $allElements = $window.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition)
+            foreach ($el in $allElements) {
+                $elName = $el.Current.Name
+                if ($elName -match "(?i)^(Close|Fechar|Exit|Sair|OK|Ok|Finished|Finalizado|Completo|Concluido|Completed)$") {
+                    Write-Host "Instalacao do Office concluida (Texto/Botao identificado: $elName). Encerrando C2R..."
+                    $process | Stop-Process -Force -ErrorAction SilentlyContinue
+                    $officeFinished = $true
+                    break
+                }
+            }
+            if ($officeFinished) { break }
+        }
+    }
+
     Disable-OfficeUpdates
 }
 

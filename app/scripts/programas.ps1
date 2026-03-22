@@ -134,7 +134,7 @@ foreach ($program in $programList) {
             $process = Start-Process -FilePath $program.Path -Wait -PassThru
         }
     }
-    if ($process.ExitCode -ne 0) {
+    if ($process.ExitCode -ne 0 -and -not $niniteFinished) {
         Write-Error "A instalacao falhou para $($program.Name) com codigo $($process.ExitCode)."
         exit $process.ExitCode
     }
