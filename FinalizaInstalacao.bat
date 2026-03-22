@@ -1,4 +1,4 @@
 @echo off
 
-"%~dp0app\bin\elevate.exe" -c "call \"%~dp0app\scripts\super.bat\""
-
+set "ROOT_DIR=%~dp0"
+"%ROOT_DIR%app\bin\elevate.exe" cmd /c "\"%ROOT_DIR%app\scripts\super.bat\""
