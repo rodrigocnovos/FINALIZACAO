@@ -10,11 +10,9 @@ public static extern bool ShowWindow(IntPtr hWnd, Int32 nCmdShow);
 $consolePtr = [Console.Window]::GetConsoleWindow()
 [Console.Window]::ShowWindow($consolePtr, 0)
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$appRoot = Split-Path -Parent $scriptDir
-$projectRoot = Split-Path -Parent $appRoot
-$stateRoot = Join-Path $projectRoot ".state"
+$stateRoot = Join-Path $env:ProgramData "FINALIZACAO"
 $stateFile = Join-Path $stateRoot "state.json"
-$logRoot = Join-Path $projectRoot "logs"
+$logRoot = Join-Path $stateRoot "logs"
 $runnerLogPath = Join-Path $logRoot "runner.log"
 $runKeyPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
 $runKeyName = "FINALIZACAOResume"

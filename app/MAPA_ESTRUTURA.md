@@ -20,7 +20,7 @@ FINALIZACAO
     │   ├── win11_files
     │   └── arquivos de apoio (.xml, .reg, .bmp)
     ├── softwares
-    │   └── instaladores e PortableGit
+    │   └── instaladores
     └── data
         └── arquivos auxiliares (.txt)
 

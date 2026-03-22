@@ -4,10 +4,7 @@ Add-Type -AssemblyName System.Windows.Forms
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $appRoot = Split-Path -Parent $scriptDir
 $projectRoot = Split-Path -Parent $appRoot
-$gitExecutable = Join-Path $appRoot "softwares\PortableGit\bin\git.exe"
-if (-not (Test-Path $gitExecutable)) {
-    $gitExecutable = "git"
-}
+$gitExecutable = "git"
 
 $owner = "rodrigocnovos"
 $repo = "FINALIZACAO"

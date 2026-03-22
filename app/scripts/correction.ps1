@@ -36,9 +36,9 @@ $options = @(
         Write-Host "Confira a janela do ativado aberta e responda"
         irm https://get.activated.win | iex
     }},
-    @{ Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Criar tarefa de monitoramento de IPS")); Action = {
+    @{ Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Iniciar o simulador HUMANO de estabilidade")); Action = {
         Write-Host "Cadastrando tarefa"
-        Start-Process powershell.exe -ArgumentList "-File `"$((Join-Path $scriptDir "ping_monitor.ps1"))`"" -NoNewWindow -PassThru -Wait
+        Start-Process powershell.exe -ArgumentList "-File `"$((Join-Path $scriptDir "Testes_simulador_humano.ps1"))`"" -NoNewWindow -PassThru -Wait
         
         
     }}

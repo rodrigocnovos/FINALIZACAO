@@ -42,7 +42,8 @@ Dism /Online /Import-DefaultAppAssociations:$assocFile
 # Verificar sucesso
 if ($?) {
     Write-Host "Microsoft Edge foi definido como navegador padrão com sucesso."
-} else {
+}
+else {
     Write-Error "Falha ao importar as associações atualizadas."
 }
 
@@ -107,17 +108,17 @@ function CriarCheckBox {
         [int]$posX = 20,
         [bool]$marcado = $false,
         [bool]$habilitado = $true
-        )
-        $checkbox = New-Object Windows.Forms.CheckBox
-        $checkbox.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes($texto))
-        $checkbox.AutoSize = $true
-        $checkbox.Name = $nome
-        $checkbox.Checked = $marcado
-        $checkbox.Enabled = $habilitado
-        $checkbox.Location = New-Object Drawing.Point($posX, $posY)
-        $form.Controls.Add($checkbox)
-        return $checkbox
-    }
+    )
+    $checkbox = New-Object Windows.Forms.CheckBox
+    $checkbox.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes($texto))
+    $checkbox.AutoSize = $true
+    $checkbox.Name = $nome
+    $checkbox.Checked = $marcado
+    $checkbox.Enabled = $habilitado
+    $checkbox.Location = New-Object Drawing.Point($posX, $posY)
+    $form.Controls.Add($checkbox)
+    return $checkbox
+}
 
 function CriarRadioButton {
     param (
@@ -168,7 +169,7 @@ function AtualizarEstadoBotaoOK {
 }
 
 function Get-StateRoot {
-    return (Join-Path (Split-Path -Parent $script:appRoot) ".state")
+    return (Join-Path $env:ProgramData "FINALIZACAO")
 }
 
 function Get-StateFilePath {
@@ -176,7 +177,7 @@ function Get-StateFilePath {
 }
 
 function Get-LogRoot {
-    return (Join-Path (Split-Path -Parent $script:appRoot) "logs")
+    return (Join-Path (Get-StateRoot) "logs")
 }
 
 function Register-ResumeRunKey {
@@ -197,13 +198,13 @@ function New-TaskDefinition {
     )
 
     return [PSCustomObject]@{
-        name = $Name
-        scriptPath = $ScriptPath
-        argumentLine = $ArgumentLine
-        preferredOrder = $PreferredOrder
+        name              = $Name
+        scriptPath        = $ScriptPath
+        argumentLine      = $ArgumentLine
+        preferredOrder    = $PreferredOrder
         waitForCompletion = $WaitForCompletion
-        status = "pending"
-        rebootCount = 0
+        status            = "pending"
+        rebootCount       = 0
     }
 }
 
@@ -214,18 +215,17 @@ $leftY = 130
 $rightY = 130
 
 $checkboxData = @(
-    @{Texto = "Checar se faltam drivers"; Nome = "rel_driver.ps1"; Ordem = 100; Espera = $true},
-    @{Texto = "Baixe os programas no nosso servidor"; Nome = "Servidor_share.ps1"; Ordem = 110; Espera = $false},
-    @{Texto = "Forçar atualizações do Windows Update e Loja"; Nome = "wupdate.ps1"; Ordem = 120; Espera = $true},
-    @{Texto = "Selecionar programas para bloqueio no Firewall"; Nome = "list_program_firewall.ps1"; Ordem = 130; Espera = $true},
-    @{Texto = "Bloquear as atualizações"; Nome = "block.ps1"; Ordem = 140; Espera = $true},
-    @{Texto = "Ativador Windows 10/11"; Nome = "licenca.ps1"; Ordem = 900; Espera = $true},
-    @{Texto = "Gerar relatório de saúde de bateria"; Nome = "bat.ps1"; Ordem = 150; Espera = $false},
-    @{Texto = "Abrir sites de testes de Teclado, Câmera e Microfone"; Nome = "test.ps1"; Ordem = 160; Espera = $false},
-    @{Texto = "Script para correções diversas"; Nome = "correction.ps1"; Ordem = 170; Espera = $true},
-    @{Texto = "Padronização, papel de parede, ícones de contatos e menus"; Nome = "wallpaper.ps1"; Ordem = 180; Espera = $false},
-    @{Texto = "Criar ponto de restauração"; Nome = "restorepoint.ps1"; Ordem = 190; Espera = $true},
-    @{Texto = "Limpeza de temporários, arquivos da instalação e rastros de uso"; Nome = "limpeza.ps1"; Ordem = 999; Espera = $true}
+    @{Texto = "Checar se faltam drivers"; Nome = "rel_driver.ps1"; Ordem = 100; Espera = $true },
+    @{Texto = "Forçar atualizações do Windows Update e Loja"; Nome = "wupdate.ps1"; Ordem = 120; Espera = $true },
+    @{Texto = "Selecionar programas para bloqueio no Firewall"; Nome = "list_program_firewall.ps1"; Ordem = 130; Espera = $true },
+    @{Texto = "Bloquear as atualizações"; Nome = "block.ps1"; Ordem = 140; Espera = $true },
+    @{Texto = "Ativador Windows 10/11"; Nome = "licenca.ps1"; Ordem = 900; Espera = $true },
+    @{Texto = "Gerar relatório de saúde de bateria"; Nome = "bat.ps1"; Ordem = 150; Espera = $false },
+    @{Texto = "Abrir sites de testes de Teclado, Câmera e Microfone"; Nome = "test.ps1"; Ordem = 160; Espera = $false },
+    @{Texto = "Script para correções diversas"; Nome = "correction.ps1"; Ordem = 170; Espera = $true },
+    @{Texto = "Padronização, papel de parede, ícones de contatos e menus"; Nome = "wallpaper.ps1"; Ordem = 180; Espera = $false },
+    @{Texto = "Criar ponto de restauração"; Nome = "restorepoint.ps1"; Ordem = 190; Espera = $true },
+    @{Texto = "Limpeza de temporários, arquivos da instalação e rastros de uso"; Nome = "limpeza.ps1"; Ordem = 999; Espera = $true }
 )
 
 [void](CriarLabelSecao "Ações do sistema" $columnHeaderY $leftColumnX)
@@ -237,6 +237,9 @@ foreach ($data in $checkboxData) {
 }
 
 $rightIndentX = $rightColumnX + 20
+
+$taskCheckboxes += CriarCheckBox "Baixe os programas no nosso servidor" "Servidor_share.ps1" $rightY $rightColumnX
+$rightY += 34
 
 $officeInstallCheckbox = CriarCheckBox "Instalar Microsoft Office PT-BR" "__office__" $rightY $rightColumnX
 $rightY += 28
@@ -251,9 +254,9 @@ $programInstallCheckbox = CriarCheckBox "Instalar aplicativos adicionais" "__pro
 $rightY += 28
 [void](CriarLabelSecao "Esses instaladores rodam em sequência, nunca ao mesmo tempo:" $rightY $rightIndentX)
 $rightY += 24
-$programOptionCheckboxes += CriarCheckBox "Ninite AnyDesk + Chrome + Firefox + Foxit Reader" "ninite_web" $rightY $rightIndentX $true $false
+$programOptionCheckboxes += CriarCheckBox "Ninite - AnyDesk + Chrome + Firefox + Foxit Reader + Winrar + VLC" "ninite_web" $rightY $rightIndentX $true $false
 $rightY += 24
-$programOptionCheckboxes += CriarCheckBox "Ninite Glary + Malwarebytes + Revo + TeraCopy" "ninite_tools" $rightY $rightIndentX $false $false
+$programOptionCheckboxes += CriarCheckBox "Ninite - Glary + Malwarebytes + Revo + TeraCopy" "ninite_tools" $rightY $rightIndentX $false $false
 $rightY += 24
 $programOptionCheckboxes += CriarCheckBox "RustDesk" "rustdesk" $rightY $rightIndentX $true $false
 $rightY += 30
@@ -262,18 +265,18 @@ $rightY += 10
 $taskAreaBottom = [Math]::Max($leftY, $rightY)
 
 $officeInstallCheckbox.Add_CheckedChanged({
-    foreach ($radio in $officeOptionRadios) {
-        $radio.Enabled = $officeInstallCheckbox.Checked
-    }
-    AtualizarEstadoBotaoOK
-})
+        foreach ($radio in $officeOptionRadios) {
+            $radio.Enabled = $officeInstallCheckbox.Checked
+        }
+        AtualizarEstadoBotaoOK
+    })
 
 $programInstallCheckbox.Add_CheckedChanged({
-    foreach ($programCheckbox in $programOptionCheckboxes) {
-        $programCheckbox.Enabled = $programInstallCheckbox.Checked
-    }
-    AtualizarEstadoBotaoOK
-})
+        foreach ($programCheckbox in $programOptionCheckboxes) {
+            $programCheckbox.Enabled = $programInstallCheckbox.Checked
+        }
+        AtualizarEstadoBotaoOK
+    })
 
 foreach ($checkbox in ($taskCheckboxes + $programOptionCheckboxes)) {
     $checkbox.Add_CheckedChanged({ AtualizarEstadoBotaoOK })
@@ -301,83 +304,83 @@ $buttonOK.Size = New-Object Drawing.Size(80, 30)
 $buttonOK.Text = "OK"
 $buttonOK.Enabled = $false
 $buttonOK.Add_Click({
-    $selectedProgramKeys = @()
-    $taskOrderMap = @{}
-    $taskWaitMap = @{}
-    foreach ($taskConfig in $checkboxData) {
-        $taskOrderMap[$taskConfig.Nome] = [int]$taskConfig.Ordem
-        $taskWaitMap[$taskConfig.Nome] = [bool]$taskConfig.Espera
-    }
-
-    if ($programInstallCheckbox.Checked) {
-        $selectedProgramKeys = $programOptionCheckboxes | Where-Object { $_.Checked } | ForEach-Object { $_.Name }
-    }
-
-    if ($programInstallCheckbox.Checked -and $selectedProgramKeys.Count -eq 0) {
-        [System.Windows.Forms.MessageBox]::Show("Selecione pelo menos um instalador adicional.", "AVISO", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Warning)
-        return
-    }
-
-    $tasks = @()
-    $tasks += New-TaskDefinition -Name "Desativar antivirus" -ScriptPath (Join-Path $scriptDir "defender.ps1") -PreferredOrder 10 -WaitForCompletion $true
-
-    foreach ($checkbox in $taskCheckboxes) {
-        if ($checkbox.Checked) {
-            $preferredOrder = if ($taskOrderMap.ContainsKey($checkbox.Name)) { $taskOrderMap[$checkbox.Name] } else { 500 }
-            $waitForCompletion = if ($taskWaitMap.ContainsKey($checkbox.Name)) { $taskWaitMap[$checkbox.Name] } else { $true }
-            $taskDefinition = New-TaskDefinition -Name $checkbox.Text -ScriptPath (Join-Path $scriptDir $checkbox.Name) -PreferredOrder $preferredOrder -WaitForCompletion $waitForCompletion
-            $tasks += $taskDefinition
+        $selectedProgramKeys = @()
+        $taskOrderMap = @{}
+        $taskWaitMap = @{}
+        foreach ($taskConfig in $checkboxData) {
+            $taskOrderMap[$taskConfig.Nome] = [int]$taskConfig.Ordem
+            $taskWaitMap[$taskConfig.Nome] = [bool]$taskConfig.Espera
         }
-    }
 
-    if ($officeInstallCheckbox.Checked) {
-        $selectedOffice = $officeOptionRadios | Where-Object { $_.Checked } | Select-Object -First 1
-        if ($selectedOffice) {
-            $tasks += New-TaskDefinition -Name "Instalação do Office" -ScriptPath (Join-Path $scriptDir "office.ps1") -ArgumentLine "-SelectionKey $($selectedOffice.Name)" -PreferredOrder 200 -WaitForCompletion $true
+        if ($programInstallCheckbox.Checked) {
+            $selectedProgramKeys = $programOptionCheckboxes | Where-Object { $_.Checked } | ForEach-Object { $_.Name }
         }
-    }
 
-    if ($programInstallCheckbox.Checked -and $selectedProgramKeys.Count -gt 0) {
-        $selectedProgramsCsv = ($selectedProgramKeys -join ",")
-        $tasks += New-TaskDefinition -Name "Instaladores adicionais" -ScriptPath (Join-Path $scriptDir "programas.ps1") -ArgumentLine "-SelectionKeysCsv `"$selectedProgramsCsv`"" -PreferredOrder 210 -WaitForCompletion $true
-    }
+        if ($programInstallCheckbox.Checked -and $selectedProgramKeys.Count -eq 0) {
+            [System.Windows.Forms.MessageBox]::Show("Selecione pelo menos um instalador adicional.", "AVISO", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Warning)
+            return
+        }
 
-    $tasks = @($tasks | Sort-Object -Property preferredOrder, name)
+        $tasks = @()
+        $tasks += New-TaskDefinition -Name "Desativar antivirus" -ScriptPath (Join-Path $scriptDir "defender.ps1") -PreferredOrder 10 -WaitForCompletion $true
 
-    if ($tasks.Count -eq 0) {
-        [System.Windows.Forms.MessageBox]::Show("Nenhuma etapa foi selecionada.", "AVISO", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Warning)
-        return
-    }
+        foreach ($checkbox in $taskCheckboxes) {
+            if ($checkbox.Checked) {
+                $preferredOrder = if ($taskOrderMap.ContainsKey($checkbox.Name)) { $taskOrderMap[$checkbox.Name] } else { 500 }
+                $waitForCompletion = if ($taskWaitMap.ContainsKey($checkbox.Name)) { $taskWaitMap[$checkbox.Name] } else { $true }
+                $taskDefinition = New-TaskDefinition -Name $checkbox.Text -ScriptPath (Join-Path $scriptDir $checkbox.Name) -PreferredOrder $preferredOrder -WaitForCompletion $waitForCompletion
+                $tasks += $taskDefinition
+            }
+        }
 
-    $stateRoot = Get-StateRoot
-    if (-not (Test-Path $stateRoot)) {
-        New-Item -ItemType Directory -Path $stateRoot -Force | Out-Null
-    }
+        if ($officeInstallCheckbox.Checked) {
+            $selectedOffice = $officeOptionRadios | Where-Object { $_.Checked } | Select-Object -First 1
+            if ($selectedOffice) {
+                $tasks += New-TaskDefinition -Name "Instalação do Office" -ScriptPath (Join-Path $scriptDir "office.ps1") -ArgumentLine "-SelectionKey $($selectedOffice.Name)" -PreferredOrder 200 -WaitForCompletion $true
+            }
+        }
 
-    $logRoot = Get-LogRoot
-    if (-not (Test-Path $logRoot)) {
-        New-Item -ItemType Directory -Path $logRoot -Force | Out-Null
-    }
+        if ($programInstallCheckbox.Checked -and $selectedProgramKeys.Count -gt 0) {
+            $selectedProgramsCsv = ($selectedProgramKeys -join ",")
+            $tasks += New-TaskDefinition -Name "Instaladores adicionais" -ScriptPath (Join-Path $scriptDir "programas.ps1") -ArgumentLine "-SelectionKeysCsv `"$selectedProgramsCsv`"" -PreferredOrder 210 -WaitForCompletion $true
+        }
 
-    $state = [PSCustomObject]@{
-        version = 1
-        createdAt = (Get-Date).ToString("o")
-        appVersion = $appVersion
-        tecnico = $textBox.Text
-        os = $textBoxOS.Text
-        tasks = $tasks
-    }
+        $tasks = @($tasks | Sort-Object -Property preferredOrder, name)
 
-    $state | ConvertTo-Json -Depth 8 | Set-Content -Path (Get-StateFilePath) -Encoding UTF8
-    Register-ResumeRunKey
+        if ($tasks.Count -eq 0) {
+            [System.Windows.Forms.MessageBox]::Show("Nenhuma etapa foi selecionada.", "AVISO", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Warning)
+            return
+        }
 
-    $runnerPath = Join-Path $scriptDir "runner.ps1"
-    $runnerStdOut = Join-Path $logRoot "runner_stdout.log"
-    $runnerStdErr = Join-Path $logRoot "runner_stderr.log"
-    "[{0}] ENDER iniciou o runner." -f (Get-Date -Format "yyyy-MM-dd HH:mm:ss") | Out-File -LiteralPath (Join-Path $logRoot "ender.log") -Append -Encoding UTF8
-    Start-Process -FilePath "powershell.exe" -ArgumentList "-ExecutionPolicy Bypass -File `"$runnerPath`"" -RedirectStandardOutput $runnerStdOut -RedirectStandardError $runnerStdErr
-    $form.Close()
-})
+        $stateRoot = Get-StateRoot
+        if (-not (Test-Path $stateRoot)) {
+            New-Item -ItemType Directory -Path $stateRoot -Force | Out-Null
+        }
+
+        $logRoot = Get-LogRoot
+        if (-not (Test-Path $logRoot)) {
+            New-Item -ItemType Directory -Path $logRoot -Force | Out-Null
+        }
+
+        $state = [PSCustomObject]@{
+            version    = 1
+            createdAt  = (Get-Date).ToString("o")
+            appVersion = $appVersion
+            tecnico    = $textBox.Text
+            os         = $textBoxOS.Text
+            tasks      = $tasks
+        }
+
+        $state | ConvertTo-Json -Depth 8 | Set-Content -Path (Get-StateFilePath) -Encoding UTF8
+        Register-ResumeRunKey
+
+        $runnerPath = Join-Path $scriptDir "runner.ps1"
+        $runnerStdOut = Join-Path $logRoot "runner_stdout.log"
+        $runnerStdErr = Join-Path $logRoot "runner_stderr.log"
+        "[{0}] ENDER iniciou o runner." -f (Get-Date -Format "yyyy-MM-dd HH:mm:ss") | Out-File -LiteralPath (Join-Path $logRoot "ender.log") -Append -Encoding UTF8
+        Start-Process -FilePath "powershell.exe" -ArgumentList "-ExecutionPolicy Bypass -File `"$runnerPath`"" -WindowStyle Hidden -RedirectStandardOutput $runnerStdOut -RedirectStandardError $runnerStdErr
+        $form.Close()
+    })
 $form.Controls.Add($buttonOK)
 
 # Botão Cancelar
@@ -395,8 +398,8 @@ $buttonUpdate.Size = New-Object Drawing.Size(80, 30)
 $buttonUpdate.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Checar atualizações?"))
 $buttonUpdate.AutoSize = $true
 $buttonUpdate.Add_Click({ 
-    Start-Process powershell.exe -ArgumentList "-File `"$((Join-Path $scriptDir "update_script.ps1"))`"" -NoNewWindow -PassThru
-})
+        Start-Process powershell.exe -ArgumentList "-File `"$((Join-Path $scriptDir "update_script.ps1"))`"" -NoNewWindow -PassThru
+    })
 $form.Controls.Add($buttonUpdate)
 
 AtualizarEstadoBotaoOK

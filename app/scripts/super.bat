@@ -50,7 +50,6 @@ set "ZIP_URL=https://github.com/rodrigocnovos/FINALIZACAO/archive/refs/heads/%UP
 set "RAW_VERSION_URL=https://raw.githubusercontent.com/rodrigocnovos/FINALIZACAO/%UPDATE_BRANCH%/%VERSION_FILE_REL%"
 
 set "GIT_EXE=git"
-if exist "%APP_DIR%\softwares\PortableGit\bin\git.exe" set "GIT_EXE=%APP_DIR%\softwares\PortableGit\bin\git.exe"
 
 set "LOCAL_VERSION=0.0.0"
 if exist "%VERSION_FILE_PATH%" (

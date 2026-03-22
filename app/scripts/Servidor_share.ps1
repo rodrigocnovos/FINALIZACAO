@@ -11,15 +11,17 @@ $form.StartPosition = "CenterScreen"
 # Lista de opções com texto e ações
 $options = @(
     @{ Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Abrir Servidor de arquivos pela WEB")); Action = {
-        Write-Host "abrir no navegador"
-        Start-Process http://177.107.97.38:9123
-        # Enable-WindowsOptionalFeature -Online -FeatureName SMB1Protocol -All -NoRestart
+            Write-Host "abrir no navegador"
+            Start-Process https://drive.microfacilrn.com.br
+            # Enable-WindowsOptionalFeature -Online -FeatureName SMB1Protocol -All -NoRestart
 
-    }},
+        }
+    },
     @{ Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Abrir pelo navegador de arquivos do Windows/Rede Assistência")); Action = {
-        Write-Host "abrir no explorador de arquivos"
-        explorer \\172.20.0.42
-    }}
+            Write-Host "abrir no explorador de arquivos"
+            explorer \\172.20.0.8
+        }
+    }
     
 
     
@@ -47,14 +49,14 @@ $button.Size = New-Object System.Drawing.Size(100, 30)
 
 # Adicionar ação ao botão
 $button.Add_Click({
-    for ($i = 0; $i -lt $checkBoxes.Count; $i++) {
-        if ($checkBoxes[$i].Checked) {
-             $options[$i].Action.Invoke()
+        for ($i = 0; $i -lt $checkBoxes.Count; $i++) {
+            if ($checkBoxes[$i].Checked) {
+                $options[$i].Action.Invoke()
+            }
         }
-    }
    
-    $form.Close()
-})
+        $form.Close()
+    })
 
 # Adicionar botão ao formulário
 $form.Controls.Add($button)
