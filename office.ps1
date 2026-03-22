@@ -137,6 +137,7 @@ function Download-And-RunInstaller {
 
     try {
         Write-Host "Baixando instalador: $FileName"
+        $ProgressPreference = 'SilentlyContinue'
         Invoke-WebRequest -UseBasicParsing -Uri $Url -OutFile $installerPath
     } catch {
         if ($FallbackUrl -and $FallbackFileName) {
