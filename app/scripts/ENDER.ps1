@@ -53,7 +53,8 @@ Remove-Item -Path $assocFile -Force
 Add-Type -AssemblyName System.Windows.Forms
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$versionFilePath = Join-Path $scriptDir "launcher.version"
+$appRoot = Split-Path -Parent $scriptDir
+$versionFilePath = Join-Path $appRoot "config\launcher.version"
 $appVersion = "0.0.0"
 
 if (Test-Path $versionFilePath) {
@@ -205,18 +206,18 @@ $leftY = 130
 $rightY = 130
 
 $checkboxData = @(
-    @{Texto = "Checar se faltam drivers"; Nome = ".\rel_driver.ps1"},
-    @{Texto = "Baixe os programas no nosso servidor"; Nome = ".\Servidor_share.ps1"},
-    @{Texto = "Forçar atualizações do Windows Update e Loja"; Nome = ".\wupdate.ps1"},
-    @{Texto = "Selecionar programas para bloqueio no Firewall"; Nome = ".\list_program_firewall.ps1"},
-    @{Texto = "Bloquear as atualizações"; Nome = ".\block.ps1"},
-    @{Texto = "Ativador Windows 10/11"; Nome = ".\licenca.ps1"},
-    @{Texto = "Gerar relatório de saúde de bateria"; Nome = ".\bat.ps1"},
-    @{Texto = "Abrir sites de testes de Teclado, Câmera e Microfone"; Nome = ".\test.ps1"},
-    @{Texto = "Script para correções diversas"; Nome = ".\correction.ps1"},
-    @{Texto = "Padronização, papel de parede, ícones de contatos e menus"; Nome = ".\wallpaper.ps1"},
-    @{Texto = "Criar ponto de restauração"; Nome = ".\restorepoint.ps1"},
-    @{Texto = "Limpeza de temporários, arquivos da instalação e rastros de uso"; Nome = ".\limpeza.ps1"}
+    @{Texto = "Checar se faltam drivers"; Nome = "rel_driver.ps1"},
+    @{Texto = "Baixe os programas no nosso servidor"; Nome = "Servidor_share.ps1"},
+    @{Texto = "Forçar atualizações do Windows Update e Loja"; Nome = "wupdate.ps1"},
+    @{Texto = "Selecionar programas para bloqueio no Firewall"; Nome = "list_program_firewall.ps1"},
+    @{Texto = "Bloquear as atualizações"; Nome = "block.ps1"},
+    @{Texto = "Ativador Windows 10/11"; Nome = "licenca.ps1"},
+    @{Texto = "Gerar relatório de saúde de bateria"; Nome = "bat.ps1"},
+    @{Texto = "Abrir sites de testes de Teclado, Câmera e Microfone"; Nome = "test.ps1"},
+    @{Texto = "Script para correções diversas"; Nome = "correction.ps1"},
+    @{Texto = "Padronização, papel de parede, ícones de contatos e menus"; Nome = "wallpaper.ps1"},
+    @{Texto = "Criar ponto de restauração"; Nome = "restorepoint.ps1"},
+    @{Texto = "Limpeza de temporários, arquivos da instalação e rastros de uso"; Nome = "limpeza.ps1"}
 )
 
 [void](CriarLabelSecao "Ações do sistema" $columnHeaderY $leftColumnX)
@@ -303,8 +304,8 @@ $buttonOK.Add_Click({
 
     foreach ($checkbox in $taskCheckboxes) {
         if ($checkbox.Checked) {
-            $taskDefinition = New-TaskDefinition -Name $checkbox.Text -ScriptPath (Join-Path $scriptDir ($checkbox.Name.TrimStart(".\")))
-            if ($checkbox.Name -eq ".\licenca.ps1") {
+            $taskDefinition = New-TaskDefinition -Name $checkbox.Text -ScriptPath (Join-Path $scriptDir $checkbox.Name)
+            if ($checkbox.Name -eq "licenca.ps1") {
                 $licenseTask = $taskDefinition
             } else {
                 $tasks += $taskDefinition
@@ -370,7 +371,7 @@ $buttonUpdate.Size = New-Object Drawing.Size(80, 30)
 $buttonUpdate.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Checar atualizações?"))
 $buttonUpdate.AutoSize = $true
 $buttonUpdate.Add_Click({ 
-    Start-Process powershell.exe -ArgumentList "-File update_script.ps1" -NoNewWindow -PassThru
+    Start-Process powershell.exe -ArgumentList "-File `"$((Join-Path $scriptDir "update_script.ps1"))`"" -NoNewWindow -PassThru
 })
 $form.Controls.Add($buttonUpdate)
 

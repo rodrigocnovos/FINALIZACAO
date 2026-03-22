@@ -6,6 +6,7 @@ Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$appRoot = Split-Path -Parent $scriptDir
 
 class OfficeOption {
     [string]$Key
@@ -25,7 +26,7 @@ class OfficeOption {
     }
 }
 
-$officeBasePath = Join-Path $scriptDir "softwares\Office 2013-2024 C2R Install - Lite v7.7.7.7 r25 x64"
+$officeBasePath = Join-Path $appRoot "softwares\Office 2013-2024 C2R Install - Lite v7.7.7.7 r25 x64"
 $officeOptions = @(
     [OfficeOption]::new(
         "office2024_basic",
@@ -47,7 +48,7 @@ function Get-OfficeOptionByKey {
 }
 
 function Disable-OfficeUpdates {
-    $regFile = Join-Path $scriptDir "disble_office_updates.reg"
+    $regFile = Join-Path $appRoot "assets\disble_office_updates.reg"
     if (Test-Path $regFile) {
         $regeditPath = Join-Path $env:SystemRoot "regedit.exe"
         Start-Process $regeditPath -ArgumentList "/s `"$regFile`"" -Wait

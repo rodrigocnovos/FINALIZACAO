@@ -3,7 +3,8 @@ param(
 )
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$softwareDir = Join-Path $scriptDir "softwares"
+$appRoot = Split-Path -Parent $scriptDir
+$softwareDir = Join-Path $appRoot "softwares"
 
 $programList = @(
     [PSCustomObject]@{

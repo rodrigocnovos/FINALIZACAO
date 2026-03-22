@@ -1,4 +1,10 @@
 # Função para verificar atalhos quebrados e duplicados no desktop
+Add-Type -AssemblyName System.Windows.Forms
+
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$appRoot = Split-Path -Parent $scriptDir
+$assetsRoot = Join-Path $appRoot "assets"
+
 function Verificar-AtalhosQuebradosEDuplicados {
     # Caminho do desktop do usuário atual
     $desktopPath = [Environment]::GetFolderPath("Desktop")
@@ -80,23 +86,20 @@ function Copy-IfMissing {
 $osInfo = Get-CimInstance -ClassName Win32_OperatingSystem
 
 if ($osInfo.Caption -like "*Windows 7*") {
-    $imagePath = ".\wallpaper\w7.jpg"
+    $imagePath = Join-Path $assetsRoot "wallpaper\w7.jpg"
 }
 elseif ($osInfo.Caption -like "*Windows 8*") {
-    $imagePath = ".\wallpaper\w8.jpg"
+    $imagePath = Join-Path $assetsRoot "wallpaper\w8.jpg"
 }
 elseif ($osInfo.Caption -like "*Windows 10*") {
-    $imagePath = ".\wallpaper\w10.jpg"
+    $imagePath = Join-Path $assetsRoot "wallpaper\w10.jpg"
 }
 elseif ($osInfo.Caption -like "*Windows 11*") {
-    $imagePath = ".\wallpaper\w11.jpg"
+    $imagePath = Join-Path $assetsRoot "wallpaper\w11.jpg"
 }
 
 Write-Host $imagePath
 
-# Caminho dos ícones
-$iconsPath = ".\ico\*.url"
-$iconsPathico = ".\ico\*.ico"
 # Caminho para o desktop do usuário corrente
 $desktopPath = [Environment]::GetFolderPath("Desktop")
 
@@ -107,13 +110,15 @@ if (-Not (Test-Path $targetFolderPath)) {
 }
 $targetImagePath = [System.IO.Path]::Combine($targetFolderPath, (Get-Item $imagePath).Name)
 Copy-Item $imagePath -Destination $targetImagePath -Force
-Copy-Item $iconsPathico -Destination $targetFolderPath -Force
-$iconesGeral = Get-ChildItem -Path ".\Desktop" -File -ErrorAction SilentlyContinue
+Get-ChildItem -Path (Join-Path $assetsRoot "ico") -Filter "*.ico" -File -ErrorAction SilentlyContinue | ForEach-Object {
+    Copy-Item $_.FullName -Destination $targetFolderPath -Force
+}
+$iconesGeral = Get-ChildItem -Path (Join-Path $assetsRoot "Desktop") -File -ErrorAction SilentlyContinue
 foreach ($icone in $iconesGeral) {
     Copy-IfMissing -SourcePath $icone.FullName -DestinationFolder $desktopPath
 }
 
-$atalhosWeb = Get-ChildItem -Path ".\ico" -Filter "*.url" -File -ErrorAction SilentlyContinue
+$atalhosWeb = Get-ChildItem -Path (Join-Path $assetsRoot "ico") -Filter "*.url" -File -ErrorAction SilentlyContinue
 foreach ($atalhoWeb in $atalhosWeb) {
     Copy-IfMissing -SourcePath $atalhoWeb.FullName -DestinationFolder $desktopPath
 }
@@ -173,8 +178,6 @@ if ($resultado.AtalhosParaRemover.Count -gt 0) {
 }
 
 # Continuar com o restante do script, como aplicação de configurações no registro
-$sourceFilePath = ".\DefaultLayouts.xml"
+$sourceFilePath = Join-Path $assetsRoot "DefaultLayouts.xml"
 $destinationFolderPath = "$env:LocalAppData\Microsoft\Windows\Shell"
 Copy-Item -Path $sourceFilePath -Destination $destinationFolderPath
-
-Remove-Item -Path C:\Users\Public\Desktop\*  -Force

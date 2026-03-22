@@ -5,7 +5,8 @@ $nonAdminUsers = Get-WmiObject Win32_UserAccount | Where-Object { $_.LocalAccoun
 $chosenUser = $nonAdminUsers | Select-Object -First 1
 
 # Caminho para o script que você deseja executar
-$scriptPath = ".\programas.ps1"
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$scriptPath = Join-Path $scriptDir "programas.ps1"
 
 # Script block para executar o script como outro usuário
 $scriptBlock = {

@@ -1,6 +1,8 @@
 # Habilitar Windows Forms
 Add-Type -AssemblyName System.Windows.Forms
 
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+
 # Criar o formulário
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "Escolha o script para executar"
@@ -36,7 +38,7 @@ $options = @(
     }},
     @{ Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Criar tarefa de monitoramento de IPS")); Action = {
         Write-Host "Cadastrando tarefa"
-        Start-Process powershell.exe -ArgumentList "-File .\ping_monitor.ps1" -NoNewWindow -PassThru -Wait
+        Start-Process powershell.exe -ArgumentList "-File `"$((Join-Path $scriptDir "ping_monitor.ps1"))`"" -NoNewWindow -PassThru -Wait
         
         
     }}

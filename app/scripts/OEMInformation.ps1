@@ -1,5 +1,7 @@
 # Caminho para o arquivo onde a variável será armazenada
-$caminhoArquivo = ".\tmp.txt"
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$appRoot = Split-Path -Parent $scriptDir
+$caminhoArquivo = Join-Path $appRoot "data\tmp.txt"
 # Ler o valor da variável do arquivo
 $tecOS = Get-Content -Path $caminhoArquivo
 
@@ -18,4 +20,4 @@ reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation" /v Logo 
 #Copia a imagem da Microfácil para a OEM LOGO
 
 $ImagensPublicas = [System.Environment]::GetFolderPath("CommonPictures")
-Copy-Item ".\oemlogo.bmp" $ImagensPublicas
+Copy-Item (Join-Path $appRoot "assets\oemlogo.bmp") $ImagensPublicas

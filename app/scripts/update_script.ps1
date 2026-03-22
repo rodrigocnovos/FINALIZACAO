@@ -2,7 +2,9 @@
 Add-Type -AssemblyName System.Windows.Forms
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$gitExecutable = Join-Path $scriptDir "softwares\PortableGit\bin\git.exe"
+$appRoot = Split-Path -Parent $scriptDir
+$projectRoot = Split-Path -Parent $appRoot
+$gitExecutable = Join-Path $appRoot "softwares\PortableGit\bin\git.exe"
 if (-not (Test-Path $gitExecutable)) {
     $gitExecutable = "git"
 }
@@ -10,18 +12,22 @@ if (-not (Test-Path $gitExecutable)) {
 $owner = "rodrigocnovos"
 $repo = "FINALIZACAO"
 $branch = "main"
-$branchOverrideFile = Join-Path $scriptDir "branch_update.ini"
-$versionFile = "launcher.version"
-$localVersionPath = Join-Path $scriptDir $versionFile
+$branchOverrideFile = Join-Path $appRoot "config\branch_update.ini"
+$versionFile = "app/config/launcher.version"
+$localVersionPath = Join-Path $appRoot "config\launcher.version"
 
 function Get-UpdateBranch {
     if (Test-Path $branchOverrideFile) {
-        $rawValue = (Get-Content -LiteralPath $branchOverrideFile -TotalCount 1 -ErrorAction SilentlyContinue).Trim()
-        if ($rawValue) {
-            if ($rawValue -match '^\s*branch\s*=\s*(.+)\s*$') {
+        $candidateLine = Get-Content -LiteralPath $branchOverrideFile -ErrorAction SilentlyContinue |
+            ForEach-Object { $_.Trim() } |
+            Where-Object { $_ -and -not $_.StartsWith('#') -and -not $_.StartsWith(';') } |
+            Select-Object -First 1
+
+        if ($candidateLine) {
+            if ($candidateLine -match '^\s*branch\s*=\s*(.+)\s*$') {
                 return $matches[1].Trim()
             }
-            return $rawValue
+            return $candidateLine
         }
     }
 
@@ -84,12 +90,12 @@ function Update-RepoWithGit {
     param([string]$RemoteName)
 
     Write-Output "Atualizando repositorio local via Git..."
-    & $gitExecutable -C $scriptDir fetch $RemoteName --prune
+    & $gitExecutable -C $projectRoot fetch $RemoteName --prune
     if ($LASTEXITCODE -ne 0) {
         throw "Falha ao consultar o repositorio remoto."
     }
 
-    & $gitExecutable -C $scriptDir pull --rebase --autostash $RemoteName $branch
+    & $gitExecutable -C $projectRoot pull --rebase --autostash $RemoteName $branch
     if ($LASTEXITCODE -ne 0) {
         throw "Falha ao aplicar a atualizacao via Git."
     }
@@ -119,7 +125,7 @@ function Update-RepoWithZip {
         Write-Output "Aplicando atualizacao por ZIP..."
         $robocopyArgs = @(
             $zipRoot.FullName,
-            $scriptDir,
+            $projectRoot,
             "/E",
             "/R:2",
             "/W:1",
@@ -132,8 +138,8 @@ function Update-RepoWithZip {
             ".git"
         )
 
-        Start-Process -FilePath "robocopy.exe" -ArgumentList $robocopyArgs -Wait -NoNewWindow
-        if ($LASTEXITCODE -ge 8) {
+        $robocopyProcess = Start-Process -FilePath "robocopy.exe" -ArgumentList $robocopyArgs -Wait -NoNewWindow -PassThru
+        if ($robocopyProcess.ExitCode -ge 8) {
             throw "Falha ao copiar os arquivos da atualizacao."
         }
     } finally {
@@ -145,14 +151,14 @@ function Update-RepoWithZip {
 
 function Update-Repo {
     try {
-        if ((Test-Path (Join-Path $scriptDir ".git")) -and (Test-Path $gitExecutable -or $gitExecutable -eq "git")) {
+        if ((Test-Path (Join-Path $projectRoot ".git")) -and (Test-Path $gitExecutable -or $gitExecutable -eq "git")) {
             $remoteName = "origin"
-            $configuredRemote = & $gitExecutable -C $scriptDir config --get "branch.$branch.remote" 2>$null
+            $configuredRemote = & $gitExecutable -C $projectRoot config --get "branch.$branch.remote" 2>$null
             if ($configuredRemote) {
                 $remoteName = $configuredRemote.Trim()
             }
 
-            & $gitExecutable -C $scriptDir ls-remote --exit-code $remoteName *> $null
+            & $gitExecutable -C $projectRoot ls-remote --exit-code $remoteName *> $null
             if ($LASTEXITCODE -ne 0) {
                 throw "Remoto Git indisponivel."
             }

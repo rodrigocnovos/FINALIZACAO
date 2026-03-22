@@ -1,7 +1,4 @@
 @echo off
 
-elevate.exe -c call super.bat
-
-
-
+"%~dp0app\bin\elevate.exe" -c "call \"%~dp0app\scripts\super.bat\""
 

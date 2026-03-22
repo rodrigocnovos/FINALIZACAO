@@ -4,55 +4,62 @@ setlocal EnableDelayedExpansion
 
 set "SCRIPT_DIR=%~dp0"
 if "%SCRIPT_DIR:~-1%"=="\" set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
+set "APP_DIR=%SCRIPT_DIR%\.."
+for %%I in ("%APP_DIR%") do set "APP_DIR=%%~fI"
+set "CONFIG_DIR=%APP_DIR%\config"
+set "SCRIPTS_DIR=%APP_DIR%\scripts"
+set "PROJECT_ROOT=%APP_DIR%\.."
+for %%I in ("%PROJECT_ROOT%") do set "PROJECT_ROOT=%%~fI"
 set "REPO_NAME=FINALIZACAO"
 set "DEFAULT_BRANCH=main"
 set "UPDATE_BRANCH=%DEFAULT_BRANCH%"
-set "BRANCH_OVERRIDE_FILE=%SCRIPT_DIR%\branch_update.ini"
-set "VERSION_FILE=launcher.version"
+set "BRANCH_OVERRIDE_FILE=%CONFIG_DIR%\branch_update.ini"
+set "VERSION_FILE_REL=app/config/launcher.version"
+set "VERSION_FILE_PATH=%CONFIG_DIR%\launcher.version"
 set "WINDOW_TITLE=Launcher FINALIZACAO"
 
-cd /d "%SCRIPT_DIR%"
+cd /d "%PROJECT_ROOT%"
 title %WINDOW_TITLE% - Iniciando
 echo [1/5] Iniciando launcher...
 
 call :read_update_branch
 set "ZIP_URL=https://github.com/rodrigocnovos/FINALIZACAO/archive/refs/heads/%UPDATE_BRANCH%.zip"
-set "RAW_VERSION_URL=https://raw.githubusercontent.com/rodrigocnovos/FINALIZACAO/%UPDATE_BRANCH%/%VERSION_FILE%"
-
+set "RAW_VERSION_URL=https://raw.githubusercontent.com/rodrigocnovos/FINALIZACAO/%UPDATE_BRANCH%/%VERSION_FILE_REL%"
+ 
 set "GIT_EXE=git"
-if exist "%SCRIPT_DIR%\softwares\PortableGit\bin\git.exe" set "GIT_EXE=%SCRIPT_DIR%\softwares\PortableGit\bin\git.exe"
+if exist "%APP_DIR%\softwares\PortableGit\bin\git.exe" set "GIT_EXE=%APP_DIR%\softwares\PortableGit\bin\git.exe"
 
 call :read_local_version
 
-if exist "%SCRIPT_DIR%\.git" (
+if exist "%PROJECT_ROOT%\.git" (
     set "CURRENT_BRANCH=%UPDATE_BRANCH%"
     set "CURRENT_REMOTE="
     set "REMOTE_VERSION="
     title %WINDOW_TITLE% - Verificando Git
     echo [2/5] Verificando versao remota no Git...
 
-    "%GIT_EXE%" -C "%SCRIPT_DIR%" rev-parse --is-inside-work-tree >nul 2>&1
+    "%GIT_EXE%" -C "%PROJECT_ROOT%" rev-parse --is-inside-work-tree >nul 2>&1
     if errorlevel 1 (
         echo Repositorio Git invalido. Tentando atualizacao por ZIP...
         goto update_from_zip
     )
 
-    for /f "delims=" %%i in ('"%GIT_EXE%" -C "%SCRIPT_DIR%" config --get branch.!CURRENT_BRANCH!.remote 2^>nul') do set "CURRENT_REMOTE=%%i"
+    for /f "delims=" %%i in ('"%GIT_EXE%" -C "%PROJECT_ROOT%" config --get branch.!CURRENT_BRANCH!.remote 2^>nul') do set "CURRENT_REMOTE=%%i"
     if not defined CURRENT_REMOTE set "CURRENT_REMOTE=origin"
 
-    "%GIT_EXE%" -C "%SCRIPT_DIR%" ls-remote --exit-code "!CURRENT_REMOTE!" >nul 2>&1
+    "%GIT_EXE%" -C "%PROJECT_ROOT%" ls-remote --exit-code "!CURRENT_REMOTE!" >nul 2>&1
     if errorlevel 1 (
         echo Remoto "!CURRENT_REMOTE!" indisponivel. Continuando sem update...
         goto run_script
     )
 
-    "%GIT_EXE%" -C "%SCRIPT_DIR%" fetch "!CURRENT_REMOTE!" --prune >nul 2>&1
+    "%GIT_EXE%" -C "%PROJECT_ROOT%" fetch "!CURRENT_REMOTE!" --prune >nul 2>&1
     if errorlevel 1 (
         echo Falha ao consultar atualizacoes. Continuando...
         goto run_script
     )
 
-    for /f "usebackq delims=" %%i in (`"%GIT_EXE%" -C "%SCRIPT_DIR%" show "!CURRENT_REMOTE!/!CURRENT_BRANCH!:%VERSION_FILE%" 2^>nul`) do (
+    for /f "usebackq delims=" %%i in (`"%GIT_EXE%" -C "%PROJECT_ROOT%" show "!CURRENT_REMOTE!/!CURRENT_BRANCH!:%VERSION_FILE_REL%" 2^>nul`) do (
         if not defined REMOTE_VERSION set "REMOTE_VERSION=%%i"
     )
 
@@ -72,7 +79,7 @@ if exist "%SCRIPT_DIR%\.git" (
     ) else (
         title %WINDOW_TITLE% - Aplicando atualizacao Git
         echo [4/5] Nova versao encontrada. Aplicando via Git, aguarde...
-        "%GIT_EXE%" -C "%SCRIPT_DIR%" pull --rebase --autostash "!CURRENT_REMOTE!" "!CURRENT_BRANCH!"
+        "%GIT_EXE%" -C "%PROJECT_ROOT%" pull --rebase --autostash "!CURRENT_REMOTE!" "!CURRENT_BRANCH!"
         if errorlevel 1 (
             echo Falha ao aplicar atualizacao automatica.
         ) else (
@@ -150,7 +157,7 @@ if not defined ZIP_ROOT (
 
 title %WINDOW_TITLE% - Aplicando atualizacao ZIP
 echo [5/5] Aplicando atualizacao por ZIP, aguarde...
-robocopy "%ZIP_ROOT%" "%SCRIPT_DIR%" /E /R:2 /W:1 /NFL /NDL /NJH /NJS /NP /XD ".git" >nul
+robocopy "%ZIP_ROOT%" "%PROJECT_ROOT%" /E /R:2 /W:1 /NFL /NDL /NJH /NJS /NP /XD ".git" >nul
 if errorlevel 8 (
     echo Falha ao copiar arquivos da atualizacao ZIP. Continuando...
 ) else (
@@ -163,13 +170,13 @@ if exist "%TEMP_ROOT%" rmdir /s /q "%TEMP_ROOT%" >nul 2>&1
 :run_script
 title %WINDOW_TITLE% - Executando script principal
 echo Executando rotina principal...
-PowerShell.exe -ExecutionPolicy Unrestricted -File "%SCRIPT_DIR%\ENDER.ps1"
+PowerShell.exe -ExecutionPolicy Unrestricted -File "%SCRIPTS_DIR%\ENDER.ps1"
 goto :eof
 
 :read_local_version
 set "LOCAL_VERSION=0.0.0"
-if not exist "%SCRIPT_DIR%\%VERSION_FILE%" goto :eof
-for /f "usebackq delims=" %%i in ("%SCRIPT_DIR%\%VERSION_FILE%") do (
+if not exist "%VERSION_FILE_PATH%" goto :eof
+for /f "usebackq delims=" %%i in ("%VERSION_FILE_PATH%") do (
     if not defined LOCAL_VERSION_FOUND (
         set "LOCAL_VERSION=%%i"
         set "LOCAL_VERSION_FOUND=1"
@@ -181,8 +188,12 @@ goto :eof
 :read_update_branch
 if not exist "%BRANCH_OVERRIDE_FILE%" goto :eof
 for /f "usebackq tokens=* delims=" %%i in ("%BRANCH_OVERRIDE_FILE%") do (
-    if not defined BRANCH_OVERRIDE_LINE (
-        set "BRANCH_OVERRIDE_LINE=%%i"
+    set "BRANCH_OVERRIDE_CANDIDATE=%%i"
+    if defined BRANCH_OVERRIDE_CANDIDATE (
+        set "BRANCH_OVERRIDE_FIRST_CHAR=!BRANCH_OVERRIDE_CANDIDATE:~0,1!"
+        if not "!BRANCH_OVERRIDE_FIRST_CHAR!"=="#" if not "!BRANCH_OVERRIDE_FIRST_CHAR!"==";" if not defined BRANCH_OVERRIDE_LINE (
+            set "BRANCH_OVERRIDE_LINE=!BRANCH_OVERRIDE_CANDIDATE!"
+        )
     )
 )
 if not defined BRANCH_OVERRIDE_LINE goto :eof
@@ -193,6 +204,8 @@ if /i "!BRANCH_OVERRIDE_LINE:~0,7!"=="branch=" (
     set "UPDATE_BRANCH=!BRANCH_OVERRIDE_LINE!"
 )
 set "BRANCH_OVERRIDE_LINE="
+set "BRANCH_OVERRIDE_CANDIDATE="
+set "BRANCH_OVERRIDE_FIRST_CHAR="
 goto :eof
 
 :normalize_version
