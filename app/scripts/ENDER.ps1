@@ -66,7 +66,7 @@ if (Test-Path $versionFilePath) {
 
 $form = New-Object Windows.Forms.Form
 $form.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Microfácil Finalização - V$appVersion Por Rodrigo Silveira"))
-$form.Size = New-Object Drawing.Size(940, 680)
+$form.Size = New-Object Drawing.Size(940, 600)
 $form.StartPosition = "CenterScreen"
 $form.AutoScroll = $false
 
@@ -284,8 +284,10 @@ $textBoxOS.Add_TextChanged({ AtualizarEstadoBotaoOK })
 
 # Botões
 $buttonY = $taskAreaBottom + 30
-$bottomPadding = 90
-$calculatedHeight = [Math]::Max(680, $buttonY + $bottomPadding)
+$buttonHeight = 30
+$bottomPadding = 35
+$minimumHeight = 560
+$calculatedHeight = [Math]::Max($minimumHeight, $buttonY + $buttonHeight + $bottomPadding)
 $form.ClientSize = New-Object Drawing.Size(940, $calculatedHeight)
 
 # Botão OK
