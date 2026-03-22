@@ -1,4 +1,3 @@
-
 @echo off
 setlocal EnableDelayedExpansion
 
@@ -68,11 +67,9 @@ if exist "%PROJECT_ROOT%\.git" (
         goto run_script
     )
 
-    call :normalize_version "!LOCAL_VERSION!" NORMALIZED_LOCAL_VERSION
-    call :normalize_version "!REMOTE_VERSION!" NORMALIZED_REMOTE_VERSION
     call :show_versions
 
-    call :is_remote_newer "!NORMALIZED_LOCAL_VERSION!" "!NORMALIZED_REMOTE_VERSION!"
+    call :is_remote_newer "!LOCAL_VERSION!" "!REMOTE_VERSION!"
     if errorlevel 1 (
         title %WINDOW_TITLE% - Atualizado
         echo [4/5] Projeto ja esta atualizado.
@@ -122,11 +119,9 @@ if not defined REMOTE_VERSION (
     goto cleanup_and_run
 )
 
-call :normalize_version "!LOCAL_VERSION!" NORMALIZED_LOCAL_VERSION
-call :normalize_version "!REMOTE_VERSION!" NORMALIZED_REMOTE_VERSION
 call :show_versions
 
-call :is_remote_newer "!NORMALIZED_LOCAL_VERSION!" "!NORMALIZED_REMOTE_VERSION!"
+call :is_remote_newer "!LOCAL_VERSION!" "!REMOTE_VERSION!"
 if errorlevel 1 (
     title %WINDOW_TITLE% - Atualizado
     echo [4/5] Projeto ja esta atualizado.
@@ -206,11 +201,6 @@ if /i "!BRANCH_OVERRIDE_LINE:~0,7!"=="branch=" (
 set "BRANCH_OVERRIDE_LINE="
 set "BRANCH_OVERRIDE_CANDIDATE="
 set "BRANCH_OVERRIDE_FIRST_CHAR="
-goto :eof
-
-:normalize_version
-set "%~2=%~1"
-if not defined %~2 set "%~2=0.0.0"
 goto :eof
 
 :show_versions
