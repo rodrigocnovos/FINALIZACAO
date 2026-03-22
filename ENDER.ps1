@@ -233,15 +233,9 @@ $officeInstallCheckbox = CriarCheckBox "Instalar Microsoft Office PT-BR" "__offi
 $rightY += 28
 [void](CriarLabelSecao "Escolha uma opção de Office abaixo:" $rightY $rightIndentX)
 $rightY += 24
-$officeOptionRadios += CriarRadioButton "Local 2024 x64 PT-BR" "local2024" $rightY $rightIndentX $true $false
+$officeOptionRadios += CriarRadioButton "Office 2024 Word + Excel + PowerPoint" "office2024_basic" $rightY $rightIndentX $true $false
 $rightY += 24
-$officeOptionRadios += CriarRadioButton "Microsoft 365 Apps Full x64 PT-BR" "m365full" $rightY $rightIndentX $false $false
-$rightY += 24
-$officeOptionRadios += CriarRadioButton "Microsoft 365 Apps Basic x64 PT-BR" "m365basic" $rightY $rightIndentX $false $false
-$rightY += 24
-$officeOptionRadios += CriarRadioButton "Office Home Business 2024 x64 PT-BR" "homebusiness2024" $rightY $rightIndentX $false $false
-$rightY += 24
-$officeOptionRadios += CriarRadioButton "Office Home 2024 x64 PT-BR" "home2024" $rightY $rightIndentX $false $false
+$officeOptionRadios += CriarRadioButton "Office 2024 completo + Access + Visio + Project + Publisher" "office2024_full" $rightY $rightIndentX $false $false
 $rightY += 38
 
 $programInstallCheckbox = CriarCheckBox "Instalar aplicativos adicionais" "__programs__" $rightY $rightColumnX
