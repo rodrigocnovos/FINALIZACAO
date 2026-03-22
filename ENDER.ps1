@@ -283,33 +283,8 @@ foreach ($radio in $officeOptionRadios) {
 $textBox.Add_TextChanged({ AtualizarEstadoBotaoOK })
 $textBoxOS.Add_TextChanged({ AtualizarEstadoBotaoOK })
 
-# Atualizar dinamicamente a posição de elementos abaixo dos checkboxes
-$progressBarY = $taskAreaBottom + 20
-
-# Configurar barra de progresso
-$progressBar = New-Object Windows.Forms.ProgressBar
-$progressBar.Location = New-Object Drawing.Point(20, $progressBarY)
-$progressBar.Size = New-Object Drawing.Size(880, 20)
-$progressBar.Minimum = 0
-$progressBar.Maximum = 100
-$progressBar.Value = 0
-$form.Controls.Add($progressBar)
-
-# Função para atualizar a barra de progresso e status
-function AtualizarBarra {
-    param ($atual, $total)
-    $percentual = [math]::Round(($atual / $total) * 100)
-    $progressBar.Value = $percentual
-    $status.Text = "Executando item $atual de $total... ($percentual%)"
-}
-
-$status = New-Object Windows.Forms.Label
-$status.AutoSize = $true
-$status.Location = New-Object Drawing.Point(20, $($progressBarY - 20))
-$form.Controls.Add($status)
-
 # Botões
-$buttonY = $progressBarY + 40
+$buttonY = $taskAreaBottom + 30
 
 # Botão OK
 $buttonOK = New-Object Windows.Forms.Button

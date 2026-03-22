@@ -11,8 +11,13 @@ $rebootExitCodes = @(194, 3010)
 $runnerForm = New-Object System.Windows.Forms.Form
 $runnerForm.Text = "Retomando finalizacao"
 $runnerForm.Size = New-Object System.Drawing.Size(560, 220)
-$runnerForm.StartPosition = "CenterScreen"
+$runnerForm.StartPosition = "Manual"
 $runnerForm.TopMost = $true
+$workingArea = [System.Windows.Forms.Screen]::PrimaryScreen.WorkingArea
+$runnerForm.Location = New-Object System.Drawing.Point(
+    [Math]::Max(0, $workingArea.Right - $runnerForm.Width - 20),
+    [Math]::Max(0, $workingArea.Bottom - $runnerForm.Height - 20)
+)
 
 $titleLabel = New-Object System.Windows.Forms.Label
 $titleLabel.Text = "Processo de finalizacao em andamento"
