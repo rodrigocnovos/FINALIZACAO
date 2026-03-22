@@ -187,13 +187,17 @@ function New-TaskDefinition {
     param(
         [string]$Name,
         [string]$ScriptPath,
-        [string]$ArgumentLine = ""
+        [string]$ArgumentLine = "",
+        [int]$PreferredOrder = 500,
+        [bool]$WaitForCompletion = $true
     )
 
     return [PSCustomObject]@{
         name = $Name
         scriptPath = $ScriptPath
         argumentLine = $ArgumentLine
+        preferredOrder = $PreferredOrder
+        waitForCompletion = $WaitForCompletion
         status = "pending"
         rebootCount = 0
     }
@@ -206,18 +210,18 @@ $leftY = 130
 $rightY = 130
 
 $checkboxData = @(
-    @{Texto = "Checar se faltam drivers"; Nome = "rel_driver.ps1"},
-    @{Texto = "Baixe os programas no nosso servidor"; Nome = "Servidor_share.ps1"},
-    @{Texto = "Forçar atualizações do Windows Update e Loja"; Nome = "wupdate.ps1"},
-    @{Texto = "Selecionar programas para bloqueio no Firewall"; Nome = "list_program_firewall.ps1"},
-    @{Texto = "Bloquear as atualizações"; Nome = "block.ps1"},
-    @{Texto = "Ativador Windows 10/11"; Nome = "licenca.ps1"},
-    @{Texto = "Gerar relatório de saúde de bateria"; Nome = "bat.ps1"},
-    @{Texto = "Abrir sites de testes de Teclado, Câmera e Microfone"; Nome = "test.ps1"},
-    @{Texto = "Script para correções diversas"; Nome = "correction.ps1"},
-    @{Texto = "Padronização, papel de parede, ícones de contatos e menus"; Nome = "wallpaper.ps1"},
-    @{Texto = "Criar ponto de restauração"; Nome = "restorepoint.ps1"},
-    @{Texto = "Limpeza de temporários, arquivos da instalação e rastros de uso"; Nome = "limpeza.ps1"}
+    @{Texto = "Checar se faltam drivers"; Nome = "rel_driver.ps1"; Ordem = 100; Espera = $true},
+    @{Texto = "Baixe os programas no nosso servidor"; Nome = "Servidor_share.ps1"; Ordem = 110; Espera = $false},
+    @{Texto = "Forçar atualizações do Windows Update e Loja"; Nome = "wupdate.ps1"; Ordem = 120; Espera = $true},
+    @{Texto = "Selecionar programas para bloqueio no Firewall"; Nome = "list_program_firewall.ps1"; Ordem = 130; Espera = $true},
+    @{Texto = "Bloquear as atualizações"; Nome = "block.ps1"; Ordem = 140; Espera = $true},
+    @{Texto = "Ativador Windows 10/11"; Nome = "licenca.ps1"; Ordem = 900; Espera = $true},
+    @{Texto = "Gerar relatório de saúde de bateria"; Nome = "bat.ps1"; Ordem = 150; Espera = $false},
+    @{Texto = "Abrir sites de testes de Teclado, Câmera e Microfone"; Nome = "test.ps1"; Ordem = 160; Espera = $false},
+    @{Texto = "Script para correções diversas"; Nome = "correction.ps1"; Ordem = 170; Espera = $true},
+    @{Texto = "Padronização, papel de parede, ícones de contatos e menus"; Nome = "wallpaper.ps1"; Ordem = 180; Espera = $false},
+    @{Texto = "Criar ponto de restauração"; Nome = "restorepoint.ps1"; Ordem = 190; Espera = $true},
+    @{Texto = "Limpeza de temporários, arquivos da instalação e rastros de uso"; Nome = "limpeza.ps1"; Ordem = 999; Espera = $true}
 )
 
 [void](CriarLabelSecao "Ações do sistema" $columnHeaderY $leftColumnX)
@@ -289,6 +293,13 @@ $buttonOK.Text = "OK"
 $buttonOK.Enabled = $false
 $buttonOK.Add_Click({
     $selectedProgramKeys = @()
+    $taskOrderMap = @{}
+    $taskWaitMap = @{}
+    foreach ($taskConfig in $checkboxData) {
+        $taskOrderMap[$taskConfig.Nome] = [int]$taskConfig.Ordem
+        $taskWaitMap[$taskConfig.Nome] = [bool]$taskConfig.Espera
+    }
+
     if ($programInstallCheckbox.Checked) {
         $selectedProgramKeys = $programOptionCheckboxes | Where-Object { $_.Checked } | ForEach-Object { $_.Name }
     }
@@ -299,35 +310,30 @@ $buttonOK.Add_Click({
     }
 
     $tasks = @()
-    $licenseTask = $null
-    $tasks += New-TaskDefinition -Name "Desativar antivirus" -ScriptPath (Join-Path $scriptDir "defender.ps1")
+    $tasks += New-TaskDefinition -Name "Desativar antivirus" -ScriptPath (Join-Path $scriptDir "defender.ps1") -PreferredOrder 10 -WaitForCompletion $true
 
     foreach ($checkbox in $taskCheckboxes) {
         if ($checkbox.Checked) {
-            $taskDefinition = New-TaskDefinition -Name $checkbox.Text -ScriptPath (Join-Path $scriptDir $checkbox.Name)
-            if ($checkbox.Name -eq "licenca.ps1") {
-                $licenseTask = $taskDefinition
-            } else {
-                $tasks += $taskDefinition
-            }
+            $preferredOrder = if ($taskOrderMap.ContainsKey($checkbox.Name)) { $taskOrderMap[$checkbox.Name] } else { 500 }
+            $waitForCompletion = if ($taskWaitMap.ContainsKey($checkbox.Name)) { $taskWaitMap[$checkbox.Name] } else { $true }
+            $taskDefinition = New-TaskDefinition -Name $checkbox.Text -ScriptPath (Join-Path $scriptDir $checkbox.Name) -PreferredOrder $preferredOrder -WaitForCompletion $waitForCompletion
+            $tasks += $taskDefinition
         }
     }
 
     if ($officeInstallCheckbox.Checked) {
         $selectedOffice = $officeOptionRadios | Where-Object { $_.Checked } | Select-Object -First 1
         if ($selectedOffice) {
-            $tasks += New-TaskDefinition -Name "Instalação do Office" -ScriptPath (Join-Path $scriptDir "office.ps1") -ArgumentLine "-SelectionKey $($selectedOffice.Name)"
+            $tasks += New-TaskDefinition -Name "Instalação do Office" -ScriptPath (Join-Path $scriptDir "office.ps1") -ArgumentLine "-SelectionKey $($selectedOffice.Name)" -PreferredOrder 200 -WaitForCompletion $true
         }
     }
 
     if ($programInstallCheckbox.Checked -and $selectedProgramKeys.Count -gt 0) {
         $selectedProgramsCsv = ($selectedProgramKeys -join ",")
-        $tasks += New-TaskDefinition -Name "Instaladores adicionais" -ScriptPath (Join-Path $scriptDir "programas.ps1") -ArgumentLine "-SelectionKeysCsv `"$selectedProgramsCsv`""
+        $tasks += New-TaskDefinition -Name "Instaladores adicionais" -ScriptPath (Join-Path $scriptDir "programas.ps1") -ArgumentLine "-SelectionKeysCsv `"$selectedProgramsCsv`"" -PreferredOrder 210 -WaitForCompletion $true
     }
 
-    if ($licenseTask) {
-        $tasks += $licenseTask
-    }
+    $tasks = @($tasks | Sort-Object -Property preferredOrder, name)
 
     if ($tasks.Count -eq 0) {
         [System.Windows.Forms.MessageBox]::Show("Nenhuma etapa foi selecionada.", "AVISO", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Warning)

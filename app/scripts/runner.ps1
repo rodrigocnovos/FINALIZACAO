@@ -90,6 +90,109 @@ function Remove-ResumeRunKey {
     Remove-ItemProperty -Path $runKeyPath -Name $runKeyName -ErrorAction SilentlyContinue
 }
 
+function Get-TaskProcessId {
+    param($Task)
+
+    $processIdProperty = $Task.PSObject.Properties["processId"]
+    if (-not $processIdProperty) {
+        return $null
+    }
+
+    return $processIdProperty.Value
+}
+
+function Get-RunningTaskProcess {
+    param($Task)
+
+    $processId = Get-TaskProcessId -Task $Task
+    if (-not $processId) {
+        return $null
+    }
+
+    return Get-Process -Id $processId -ErrorAction SilentlyContinue
+}
+
+function Remove-AsyncArtifacts {
+    param($Task)
+
+    foreach ($propertyName in @("asyncResultFile", "asyncWrapperFile")) {
+        $property = $Task.PSObject.Properties[$propertyName]
+        if ($property -and $property.Value -and (Test-Path $property.Value)) {
+            Remove-Item -LiteralPath $property.Value -Force -ErrorAction SilentlyContinue
+        }
+        if ($property) {
+            $property.Value = $null
+        }
+    }
+}
+
+function Start-AsyncTaskProcess {
+    param(
+        [pscustomobject]$State,
+        $Task
+    )
+
+    $token = [guid]::NewGuid().ToString("N")
+    $wrapperPath = Join-Path $stateRoot ("async_" + $token + ".ps1")
+    $resultPath = Join-Path $stateRoot ("async_" + $token + ".exitcode")
+    $scriptInvocation = "& `"$($Task.scriptPath)`""
+    if ($Task.argumentLine) {
+        $scriptInvocation += " $($Task.argumentLine)"
+    }
+
+    $wrapperContent = @"
+$scriptInvocation
+`$code = if (`$null -ne `$LASTEXITCODE) { [int]`$LASTEXITCODE } else { 0 }
+Set-Content -LiteralPath '$resultPath' -Value `$code -Encoding ASCII
+exit `$code
+"@
+
+    Set-Content -LiteralPath $wrapperPath -Value $wrapperContent -Encoding UTF8
+    Set-StateProperty -Object $Task -Name "asyncWrapperFile" -Value $wrapperPath
+    Set-StateProperty -Object $Task -Name "asyncResultFile" -Value $resultPath
+
+    $process = Start-Process -FilePath "powershell.exe" -ArgumentList "-ExecutionPolicy Bypass -File `"$wrapperPath`"" -PassThru
+    Set-StateProperty -Object $Task -Name "processId" -Value $process.Id
+    Save-State -State $State
+}
+
+function Complete-AsyncTask {
+    param(
+        [pscustomobject]$State,
+        $Task
+    )
+
+    $process = Get-RunningTaskProcess -Task $Task
+    if ($process) {
+        return $false
+    }
+
+    $resultFileProperty = $Task.PSObject.Properties["asyncResultFile"]
+    $resultFilePath = if ($resultFileProperty) { $resultFileProperty.Value } else { $null }
+    $exitCode = 0
+    if ($resultFilePath -and (Test-Path $resultFilePath)) {
+        $rawExitCode = (Get-Content -LiteralPath $resultFilePath -TotalCount 1 -ErrorAction SilentlyContinue).Trim()
+        if ($rawExitCode -match '^-?\d+$') {
+            $exitCode = [int]$rawExitCode
+        }
+    }
+
+    Set-StateProperty -Object $Task -Name "lastExitCode" -Value $exitCode
+    Set-StateProperty -Object $Task -Name "lastEndAt" -Value ((Get-Date).ToString("o"))
+    Set-StateProperty -Object $Task -Name "processId" -Value $null
+    Remove-AsyncArtifacts -Task $Task
+
+    if ($exitCode -eq 0) {
+        Set-StateProperty -Object $Task -Name "status" -Value "done"
+        Save-State -State $State
+        return $true
+    }
+
+    Set-StateProperty -Object $Task -Name "status" -Value "failed"
+    Save-State -State $State
+    return $true
+}
+
 function Show-RunnerMessage {
     param(
         [string]$Message,
@@ -117,8 +220,26 @@ $totalTasks = @($state.tasks).Count
 $runnerForm.Show()
 
 while ($true) {
-    $pendingTask = $state.tasks | Where-Object { $_.status -ne "done" } | Select-Object -First 1
-    if (-not $pendingTask) {
+    $runningTasks = @($state.tasks | Where-Object { $_.status -eq "running" })
+    foreach ($runningTask in $runningTasks) {
+        [void](Complete-AsyncTask -State $state -Task $runningTask)
+    }
+
+    $failedTask = $state.tasks | Where-Object { $_.status -eq "failed" } | Select-Object -First 1
+    if ($failedTask) {
+        $failedExitCodeProperty = $failedTask.PSObject.Properties["lastExitCode"]
+        $failedExitCode = if ($failedExitCodeProperty) { [int]$failedExitCodeProperty.Value } else { 1 }
+        Update-RunnerUi -StepText "Falha na execucao" -DetailText "A etapa '$($failedTask.name)' retornou codigo $failedExitCode." -Percent 0
+        Start-Sleep -Seconds 1
+        $runnerForm.Close()
+        Show-RunnerMessage "A etapa '$($failedTask.name)' falhou com codigo $failedExitCode." "Finalizacao" ([System.Windows.Forms.MessageBoxIcon]::Error)
+        exit $failedExitCode
+    }
+
+    $pendingTask = $state.tasks | Where-Object { $_.status -eq "pending" } | Sort-Object -Property preferredOrder, name | Select-Object -First 1
+    $runningTasks = @($state.tasks | Where-Object { $_.status -eq "running" })
+
+    if (-not $pendingTask -and $runningTasks.Count -eq 0) {
         Remove-ResumeRunKey
         Remove-Item -Path $stateFile -Force -ErrorAction SilentlyContinue
         Update-RunnerUi -StepText "Concluido" -DetailText "Todas as etapas foram executadas." -Percent 100
@@ -130,7 +251,16 @@ while ($true) {
 
     $completedTasks = @($state.tasks | Where-Object { $_.status -eq "done" }).Count
     $percent = if ($totalTasks -gt 0) { [int](($completedTasks / $totalTasks) * 100) } else { 0 }
-    Update-RunnerUi -StepText "Executando: $($pendingTask.name)" -DetailText "Etapa $($completedTasks + 1) de $totalTasks" -Percent $percent
+    if (-not $pendingTask) {
+        Update-RunnerUi -StepText "Aguardando tarefas em paralelo" -DetailText "Etapas concluidas: $completedTasks de $totalTasks" -Percent $percent
+        Start-Sleep -Seconds 1
+        continue
+    }
+
+    $waitForCompletionProperty = $pendingTask.PSObject.Properties["waitForCompletion"]
+    $waitForCompletion = if ($waitForCompletionProperty) { [bool]$waitForCompletionProperty.Value } else { $true }
+    $detailText = if ($waitForCompletion) { "Etapa $($completedTasks + 1) de $totalTasks" } else { "Etapa $($completedTasks + 1) de $totalTasks - iniciando em paralelo" }
+    Update-RunnerUi -StepText "Executando: $($pendingTask.name)" -DetailText $detailText -Percent $percent
 
     Set-StateProperty -Object $pendingTask -Name "status" -Value "running"
     Set-StateProperty -Object $pendingTask -Name "lastStartAt" -Value ((Get-Date).ToString("o"))
@@ -142,13 +272,21 @@ while ($true) {
     }
 
     Write-Host "Executando etapa: $($pendingTask.name)"
+    if (-not $waitForCompletion) {
+        Start-AsyncTaskProcess -State $state -Task $pendingTask
+        Start-Sleep -Milliseconds 250
+        continue
+    }
+
     $process = Start-Process -FilePath "powershell.exe" -ArgumentList $psArgs -Wait -PassThru
     $exitCode = $process.ExitCode
     Set-StateProperty -Object $pendingTask -Name "lastExitCode" -Value $exitCode
     Set-StateProperty -Object $pendingTask -Name "lastEndAt" -Value ((Get-Date).ToString("o"))
+    Set-StateProperty -Object $pendingTask -Name "processId" -Value $null
 
     if ($exitCode -eq 0) {
         Set-StateProperty -Object $pendingTask -Name "status" -Value "done"
+        Remove-AsyncArtifacts -Task $pendingTask
         Save-State -State $state
         continue
     }
@@ -165,6 +303,7 @@ while ($true) {
     }
 
     Set-StateProperty -Object $pendingTask -Name "status" -Value "failed"
+    Remove-AsyncArtifacts -Task $pendingTask
     Save-State -State $state
     Update-RunnerUi -StepText "Falha na execucao" -DetailText "A etapa '$($pendingTask.name)' retornou codigo $exitCode." -Percent $percent
     Start-Sleep -Seconds 1
