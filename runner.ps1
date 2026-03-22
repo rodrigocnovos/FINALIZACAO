@@ -70,6 +70,22 @@ function Save-State {
     $State | ConvertTo-Json -Depth 8 | Set-Content -Path $stateFile -Encoding UTF8
 }
 
+function Set-StateProperty {
+    param(
+        [Parameter(Mandatory = $true)]$Object,
+        [Parameter(Mandatory = $true)][string]$Name,
+        $Value
+    )
+
+    $existingProperty = $Object.PSObject.Properties[$Name]
+    if ($existingProperty) {
+        $existingProperty.Value = $Value
+        return
+    }
+
+    $Object | Add-Member -NotePropertyName $Name -NotePropertyValue $Value -Force
+}
+
 function Remove-ResumeRunKey {
     Remove-ItemProperty -Path $runKeyPath -Name $runKeyName -ErrorAction SilentlyContinue
 }
@@ -116,8 +132,8 @@ while ($true) {
     $percent = if ($totalTasks -gt 0) { [int](($completedTasks / $totalTasks) * 100) } else { 0 }
     Update-RunnerUi -StepText "Executando: $($pendingTask.name)" -DetailText "Etapa $($completedTasks + 1) de $totalTasks" -Percent $percent
 
-    $pendingTask.status = "running"
-    $pendingTask.lastStartAt = (Get-Date).ToString("o")
+    Set-StateProperty -Object $pendingTask -Name "status" -Value "running"
+    Set-StateProperty -Object $pendingTask -Name "lastStartAt" -Value ((Get-Date).ToString("o"))
     Save-State -State $state
 
     $psArgs = "-ExecutionPolicy Bypass -File `"$($pendingTask.scriptPath)`""
@@ -128,18 +144,18 @@ while ($true) {
     Write-Host "Executando etapa: $($pendingTask.name)"
     $process = Start-Process -FilePath "powershell.exe" -ArgumentList $psArgs -Wait -PassThru
     $exitCode = $process.ExitCode
-    $pendingTask.lastExitCode = $exitCode
-    $pendingTask.lastEndAt = (Get-Date).ToString("o")
+    Set-StateProperty -Object $pendingTask -Name "lastExitCode" -Value $exitCode
+    Set-StateProperty -Object $pendingTask -Name "lastEndAt" -Value ((Get-Date).ToString("o"))
 
     if ($exitCode -eq 0) {
-        $pendingTask.status = "done"
+        Set-StateProperty -Object $pendingTask -Name "status" -Value "done"
         Save-State -State $state
         continue
     }
 
     if ($rebootExitCodes -contains $exitCode) {
-        $pendingTask.status = "pending"
-        $pendingTask.rebootCount = [int]$pendingTask.rebootCount + 1
+        Set-StateProperty -Object $pendingTask -Name "status" -Value "pending"
+        Set-StateProperty -Object $pendingTask -Name "rebootCount" -Value ([int]$pendingTask.rebootCount + 1)
         Save-State -State $state
         Update-RunnerUi -StepText "Reinicio necessario" -DetailText "O computador sera reiniciado para continuar a finalizacao." -Percent $percent
         Start-Sleep -Seconds 2
@@ -148,7 +164,7 @@ while ($true) {
         exit 0
     }
 
-    $pendingTask.status = "failed"
+    Set-StateProperty -Object $pendingTask -Name "status" -Value "failed"
     Save-State -State $state
     Update-RunnerUi -StepText "Falha na execucao" -DetailText "A etapa '$($pendingTask.name)' retornou codigo $exitCode." -Percent $percent
     Start-Sleep -Seconds 1
