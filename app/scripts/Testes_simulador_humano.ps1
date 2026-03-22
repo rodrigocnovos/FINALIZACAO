@@ -5,6 +5,8 @@ param(
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
+$global:YoutubeWindowHandle = [IntPtr]::Zero
+
 if (-not ("Win32Functions.WindowActivator" -as [type])) {
     Add-Type -TypeDefinition @"
     using System;
@@ -79,18 +81,23 @@ function Set-ProcessWindowToForeground {
     param(
         [string]$ProcessName,
         [int]$RetryCount = 10,
-        [int]$RetryDelayMs = 500
+        [int]$RetryDelayMs = 500,
+        [int]$nCmdShow = 9,
+        [IntPtr]$ExcludeHandle = [IntPtr]::Zero
     )
 
     for ($attempt = 0; $attempt -lt $RetryCount; $attempt++) {
         $windowProcess = Get-Process -Name $ProcessName -ErrorAction SilentlyContinue |
-        Where-Object { $_.MainWindowHandle -ne 0 } |
+        Where-Object { 
+            $_.MainWindowHandle -ne 0 -and 
+            ($ExcludeHandle -eq [IntPtr]::Zero -or $_.MainWindowHandle -ne $ExcludeHandle) 
+        } |
         Select-Object -First 1
 
         if ($windowProcess) {
             # Truque para burlar restrição de SetForegroundWindow quando o chamador está em segundo plano
             try { [System.Windows.Forms.SendKeys]::SendWait("%") } catch {}
-            [Win32Functions.WindowActivator]::ShowWindowAsync([IntPtr]$windowProcess.MainWindowHandle, 9) | Out-Null
+            [Win32Functions.WindowActivator]::ShowWindowAsync([IntPtr]$windowProcess.MainWindowHandle, $nCmdShow) | Out-Null
             [Win32Functions.WindowActivator]::SetForegroundWindow([IntPtr]$windowProcess.MainWindowHandle) | Out-Null
             return $true
         }
@@ -112,6 +119,19 @@ function Set-WindowHandleToForeground {
 
     [Win32Functions.WindowActivator]::ShowWindowAsync($Handle, 9) | Out-Null
     [Win32Functions.WindowActivator]::SetForegroundWindow($Handle) | Out-Null
+    return $true
+}
+
+function Minimize-WindowHandle {
+    param(
+        [IntPtr]$Handle
+    )
+
+    if ($Handle -eq [IntPtr]::Zero) {
+        return $false
+    }
+
+    [Win32Functions.WindowActivator]::ShowWindow($Handle, 6) | Out-Null # SW_MINIMIZE
     return $true
 }
 
@@ -188,7 +208,8 @@ function Get-PreferredBrowserPath {
 function Invoke-BrowserFeedScroll {
     param(
         [int]$ScrollCount = 3,
-        [string]$BrowserProcessName
+        [string]$BrowserProcessName,
+        [IntPtr]$ExcludeHandle = [IntPtr]::Zero
     )
 
     if ($BrowserProcessName) {
@@ -198,7 +219,7 @@ function Invoke-BrowserFeedScroll {
             Select-Object -First 1
 
         if ($windowProcess) {
-            Set-ProcessWindowToForeground -ProcessName $BrowserProcessName -RetryCount 5 -RetryDelayMs 300 | Out-Null
+            Set-ProcessWindowToForeground -ProcessName $BrowserProcessName -RetryCount 5 -RetryDelayMs 300 -ExcludeHandle $ExcludeHandle | Out-Null
             
             # Centralizar o mouse no navegador para garantir que o scroll funcione na janela correta
             $rect = New-Object Win32Functions.RECT
@@ -261,11 +282,32 @@ function Open-BrowserUrlInActiveWindow {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Url,
-        [string]$BrowserProcessName
+        [string]$BrowserProcessName,
+        [IntPtr]$ExcludeHandle = [IntPtr]::Zero
     )
 
     if ($BrowserProcessName) {
-        Set-ProcessWindowToForeground -ProcessName $BrowserProcessName -RetryCount 10 -RetryDelayMs 300 | Out-Null
+        # Tenta encontrar um processo que tenha janela e não seja o excluído
+        $targetHandle = [IntPtr]::Zero
+        $attempts = 0
+        while ($targetHandle -eq [IntPtr]::Zero -and $attempts -lt 20) {
+            $procs = Get-Process -Name $BrowserProcessName -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 }
+            foreach ($p in $procs) {
+                if ($ExcludeHandle -eq [IntPtr]::Zero -or $p.MainWindowHandle -ne $ExcludeHandle) {
+                    $targetHandle = $p.MainWindowHandle
+                    break
+                }
+            }
+            if ($targetHandle -eq [IntPtr]::Zero) {
+                Start-Sleep -Milliseconds 300
+                $attempts++
+            }
+        }
+
+        if ($targetHandle -ne [IntPtr]::Zero) {
+            [Win32Functions.WindowActivator]::ShowWindowAsync($targetHandle, 9) | Out-Null
+            [Win32Functions.WindowActivator]::SetForegroundWindow($targetHandle) | Out-Null
+        }
     }
 
     if (-not (Set-ClipboardTextSafe -Text $Url)) {
@@ -555,10 +597,23 @@ $browserProcessName = if ($browserPath) { [System.IO.Path]::GetFileNameWithoutEx
 $youtubeUrl = "https://www.youtube.com/watch?v=36YnV9STBqc&autoplay=1"
 
 if ($browserPath) {
-    Write-Output "Acessando YouTube em janela dedicada: $youtubeUrl"
-    Start-Process -FilePath $browserPath -ArgumentList @("--new-window", $youtubeUrl) | Out-Null
-    Write-Output "Aguardando carregamento da pagina do YouTube por 10 segundos..."
-    Start-Sleep -Seconds 10
+    if ($browserProcessName) {
+        Write-Output "Acessando YouTube em nova janela: $youtubeUrl"
+        Start-Process -FilePath $browserPath -ArgumentList @("--new-window", $youtubeUrl) | Out-Null
+        Write-Output "Aguardando carregamento da pagina do YouTube por 10 segundos..."
+        Start-Sleep -Seconds 10
+
+        Write-Output "Maximizando a janela do YouTube temporariamente..."
+        if (Set-ProcessWindowToForeground -ProcessName $browserProcessName -nCmdShow 3 -RetryCount 20 -RetryDelayMs 500) {
+            $windowProcess = Get-Process -Name $browserProcessName -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1
+            if ($windowProcess) {
+                $global:YoutubeWindowHandle = [IntPtr]$windowProcess.MainWindowHandle
+                Start-Sleep -Seconds 5
+                Write-Output "Minimizando a janela do YouTube para prosseguir com o teste..."
+                Minimize-WindowHandle -Handle $global:YoutubeWindowHandle | Out-Null
+            }
+        }
+    }
 }
 else {
     Write-Warning "Nenhum navegador compativel foi encontrado para abrir o YouTube."
@@ -605,13 +660,13 @@ for ($index = 0; $index -lt $urls.Count; $index++) {
 
     if ($index -eq 0) {
         Start-Process -FilePath $browserPath -ArgumentList @("--new-window", $url) | Out-Null
-        if ($browserProcessName -and (Set-ProcessWindowToForeground -ProcessName $browserProcessName -RetryCount 20 -RetryDelayMs 500)) {
+        if ($browserProcessName -and (Set-ProcessWindowToForeground -ProcessName $browserProcessName -RetryCount 20 -RetryDelayMs 500 -ExcludeHandle $global:YoutubeWindowHandle)) {
             Start-Sleep -Seconds 1
             [System.Windows.Forms.SendKeys]::SendWait("{F11}")
         }
     }
     else {
-        if (-not (Open-BrowserUrlInActiveWindow -Url $url -BrowserProcessName $browserProcessName)) {
+        if (-not (Open-BrowserUrlInActiveWindow -Url $url -BrowserProcessName $browserProcessName -ExcludeHandle $global:YoutubeWindowHandle)) {
             Write-Warning "Falha ao navegar para $url na janela ativa do navegador."
             continue
         }
@@ -619,9 +674,9 @@ for ($index = 0; $index -lt $urls.Count; $index++) {
 
     Start-Sleep -Seconds (Get-Random -Minimum 6 -Maximum 10)
     if ($browserProcessName) {
-        Set-ProcessWindowToForeground -ProcessName $browserProcessName -RetryCount 10 -RetryDelayMs 300 | Out-Null
+        Set-ProcessWindowToForeground -ProcessName $browserProcessName -RetryCount 10 -RetryDelayMs 300 -ExcludeHandle $global:YoutubeWindowHandle | Out-Null
     }
-    Invoke-BrowserFeedScroll -ScrollCount 3 -BrowserProcessName $browserProcessName
+    Invoke-BrowserFeedScroll -ScrollCount 3 -BrowserProcessName $browserProcessName -ExcludeHandle $global:YoutubeWindowHandle
 }
 
 # ==========================================
