@@ -101,10 +101,52 @@ foreach ($program in $programList) {
         continue
     }
 
-    if ($program.Arguments -and $program.Arguments.Count -gt 0) {
-        $process = Start-Process -FilePath $program.Path -ArgumentList $program.Arguments -Wait -PassThru
+    if ($program.Key -match "ninite") {
+        Write-Host "Iniciando $($program.Name) com automacao de fechamento..."
+        $process = Start-Process -FilePath $program.Path -PassThru
+        
+        Add-Type -AssemblyName UIAutomationClient
+        $root = [System.Windows.Automation.AutomationElement]::RootElement
+        $condWindow = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, "Ninite")
+        
+        $niniteFinished = $false
+        while (-not $process.HasExited) {
+            Start-Sleep -Seconds 5
+            $window = $root.FindFirst([System.Windows.Automation.TreeScope]::Children, $condWindow)
+            if ($window) {
+                # Verifica a existencia do botao "Close" ou "Fechar" habilitado
+                $condBtn = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Button)
+                $buttons = $window.FindAll([System.Windows.Automation.TreeScope]::Descendants, $condBtn)
+                foreach ($btn in $buttons) {
+                    if ($btn.Current.Name -match "^(Close|Fechar|OK|Ok)$" -and $btn.Current.IsEnabled) {
+                        Write-Host "Instalacao do Ninite concluida (Botao identificado). Encerrando..."
+                        $process | Stop-Process -Force -ErrorAction SilentlyContinue
+                        $niniteFinished = $true
+                        break
+                    }
+                }
+                if ($niniteFinished) { break }
+                
+                # Checkbox / Textos de status como fallback
+                $condText = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Text)
+                $texts = $window.FindAll([System.Windows.Automation.TreeScope]::Descendants, $condText)
+                foreach ($txt in $texts) {
+                    if ($txt.Current.Name -match "(?i)(Finished|Finalizado)") {
+                        Write-Host "Status Finalizado detectado no Ninite. Encerrando..."
+                        $process | Stop-Process -Force -ErrorAction SilentlyContinue
+                        $niniteFinished = $true
+                        break
+                    }
+                }
+                if ($niniteFinished) { break }
+            }
+        }
     } else {
-        $process = Start-Process -FilePath $program.Path -Wait -PassThru
+        if ($program.Arguments -and $program.Arguments.Count -gt 0) {
+            $process = Start-Process -FilePath $program.Path -ArgumentList $program.Arguments -Wait -PassThru
+        } else {
+            $process = Start-Process -FilePath $program.Path -Wait -PassThru
+        }
     }
     if ($process.ExitCode -ne 0) {
         Write-Error "A instalacao falhou para $($program.Name) com codigo $($process.ExitCode)."
