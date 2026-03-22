@@ -54,6 +54,7 @@ function Get-LocalVersion {
 
 function Get-RemoteVersion {
     try {
+        $ProgressPreference = 'SilentlyContinue'
         return (Invoke-RestMethod -Uri $rawVersionUrl -Method Get -UseBasicParsing).Trim()
     } catch {
         Write-Output "Erro ao consultar a versao remota: $($_.Exception.Message)"
@@ -104,6 +105,7 @@ function Update-RepoWithZip {
         New-Item -ItemType Directory -Path $extractDir -Force | Out-Null
 
         Write-Output "Baixando atualizacao por ZIP..."
+        $ProgressPreference = 'SilentlyContinue'
         Invoke-WebRequest -UseBasicParsing -Uri $zipUrl -OutFile $zipFile
 
         Write-Output "Extraindo atualizacao..."

@@ -100,7 +100,7 @@ mkdir "%EXTRACT_DIR%" >nul 2>&1
 
 title %WINDOW_TITLE% - Consultando versao remota
 echo [2/5] Consultando versao remota, aguarde...
-PowerShell.exe -NoProfile -ExecutionPolicy Bypass -Command "try { Invoke-WebRequest -UseBasicParsing -Uri '%RAW_VERSION_URL%' -OutFile '%REMOTE_VERSION_FILE%' } catch { exit 1 }"
+PowerShell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ProgressPreference='SilentlyContinue'; try { Invoke-WebRequest -UseBasicParsing -Uri '%RAW_VERSION_URL%' -OutFile '%REMOTE_VERSION_FILE%' } catch { exit 1 }"
 if errorlevel 1 (
     echo Falha ao consultar versao remota. Continuando...
     goto cleanup_and_run
@@ -128,7 +128,7 @@ if errorlevel 1 (
 
 title %WINDOW_TITLE% - Baixando atualizacao ZIP
 echo [3/5] Nova versao encontrada. Baixando atualizacao por ZIP, aguarde...
-PowerShell.exe -NoProfile -ExecutionPolicy Bypass -Command "try { Invoke-WebRequest -UseBasicParsing -Uri '%ZIP_URL%' -OutFile '%ZIP_FILE%' } catch { exit 1 }"
+PowerShell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ProgressPreference='SilentlyContinue'; try { Invoke-WebRequest -UseBasicParsing -Uri '%ZIP_URL%' -OutFile '%ZIP_FILE%' } catch { exit 1 }"
 if errorlevel 1 (
     echo Falha ao baixar atualizacao ZIP. Continuando...
     goto cleanup_and_run
