@@ -9,9 +9,6 @@ $form.Size = New-Object Drawing.Size(500, 400)
 $form.StartPosition = "CenterScreen"
 $form.TopMost = $true  # Mantém o formulário sempre em primeiro plano
 
-# Define o encoding do formulário como UTF-8
-$form.Encoding = [System.Text.Encoding]::UTF8
-
 $label = New-Object Windows.Forms.Label
 $label.Text = "Selecione os programas:"
 $label.Location = New-Object Drawing.Point(20, 20)
