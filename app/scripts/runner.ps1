@@ -2,11 +2,32 @@ Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$stateRoot = Join-Path $env:ProgramData "FINALIZACAO"
+$appRoot = Split-Path -Parent $scriptDir
+$projectRoot = Split-Path -Parent $appRoot
+$stateRoot = Join-Path $projectRoot ".state"
 $stateFile = Join-Path $stateRoot "state.json"
+$logRoot = Join-Path $projectRoot "logs"
+$runnerLogPath = Join-Path $logRoot "runner.log"
 $runKeyPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
 $runKeyName = "FINALIZACAOResume"
 $rebootExitCodes = @(194, 3010)
+
+if (-not (Test-Path $stateRoot)) {
+    New-Item -ItemType Directory -Path $stateRoot -Force | Out-Null
+}
+
+if (-not (Test-Path $logRoot)) {
+    New-Item -ItemType Directory -Path $logRoot -Force | Out-Null
+}
+
+function Write-RunnerLog {
+    param([string]$Message)
+
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    "[$timestamp] $Message" | Out-File -LiteralPath $runnerLogPath -Append -Encoding UTF8
+}
+
+Write-RunnerLog "Runner iniciado."
 
 $runnerForm = New-Object System.Windows.Forms.Form
 $runnerForm.Text = "Retomando finalizacao"
@@ -67,6 +88,10 @@ function Save-State {
         New-Item -ItemType Directory -Path $stateRoot -Force | Out-Null
     }
 
+    if (-not (Test-Path $logRoot)) {
+        New-Item -ItemType Directory -Path $logRoot -Force | Out-Null
+    }
+
     $State | ConvertTo-Json -Depth 8 | Set-Content -Path $stateFile -Encoding UTF8
 }
 
@@ -88,6 +113,17 @@ function Set-StateProperty {
 
 function Remove-ResumeRunKey {
     Remove-ItemProperty -Path $runKeyPath -Name $runKeyName -ErrorAction SilentlyContinue
+}
+
+function Get-SafeFileName {
+    param([string]$Value)
+
+    $safeName = $Value
+    foreach ($invalidChar in [System.IO.Path]::GetInvalidFileNameChars()) {
+        $safeName = $safeName.Replace($invalidChar, '_')
+    }
+
+    return $safeName
 }
 
 function Get-TaskProcessId {
@@ -126,23 +162,39 @@ function Remove-AsyncArtifacts {
     }
 }
 
-function Start-AsyncTaskProcess {
+function Ensure-TaskExecutionArtifacts {
     param(
         [pscustomobject]$State,
         $Task
     )
 
+    if (-not (Test-Path $logRoot)) {
+        New-Item -ItemType Directory -Path $logRoot -Force | Out-Null
+    }
+
+    $existingLogPath = $Task.PSObject.Properties["logPath"]
+    if ($existingLogPath -and $existingLogPath.Value) {
+        return
+    }
+
     $token = [guid]::NewGuid().ToString("N")
     $wrapperPath = Join-Path $stateRoot ("async_" + $token + ".ps1")
     $resultPath = Join-Path $stateRoot ("async_" + $token + ".exitcode")
+    $safeTaskName = Get-SafeFileName -Value $Task.name
+    $logPath = Join-Path $logRoot ($safeTaskName + "_" + $token + ".log")
     $scriptInvocation = "& `"$($Task.scriptPath)`""
     if ($Task.argumentLine) {
         $scriptInvocation += " $($Task.argumentLine)"
     }
 
     $wrapperContent = @"
+Start-Transcript -Path '$logPath' -Append -Force -IncludeInvocationHeader
+`$timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+Write-Host "[`$timestamp] Iniciando etapa: $($Task.name)"
 $scriptInvocation
-`$code = if (`$null -ne `$LASTEXITCODE) { [int]`$LASTEXITCODE } else { 0 }
+`$code = if (`$null -ne `$LASTEXITCODE) { [int]`$LASTEXITCODE } elseif (`$?) { 0 } else { 1 }
+Write-Host "[`$(Get-Date -Format "yyyy-MM-dd HH:mm:ss")] Codigo de saida: `$code"
+Stop-Transcript
 Set-Content -LiteralPath '$resultPath' -Value `$code -Encoding ASCII
 exit `$code
 "@
@@ -150,10 +202,28 @@ exit `$code
     Set-Content -LiteralPath $wrapperPath -Value $wrapperContent -Encoding UTF8
     Set-StateProperty -Object $Task -Name "asyncWrapperFile" -Value $wrapperPath
     Set-StateProperty -Object $Task -Name "asyncResultFile" -Value $resultPath
+    Set-StateProperty -Object $Task -Name "logPath" -Value $logPath
+    Save-State -State $State
+}
 
+function Start-TaskProcess {
+    param(
+        [pscustomobject]$State,
+        $Task,
+        [bool]$WaitForCompletion
+    )
+
+    Ensure-TaskExecutionArtifacts -State $State -Task $Task
+    $wrapperPath = $Task.PSObject.Properties["asyncWrapperFile"].Value
     $process = Start-Process -FilePath "powershell.exe" -ArgumentList "-ExecutionPolicy Bypass -File `"$wrapperPath`"" -PassThru
     Set-StateProperty -Object $Task -Name "processId" -Value $process.Id
     Save-State -State $State
+
+    if ($WaitForCompletion) {
+        $process.WaitForExit()
+    }
+
+    return $process
 }
 
 function Complete-AsyncTask {
@@ -169,6 +239,8 @@ function Complete-AsyncTask {
 
     $resultFileProperty = $Task.PSObject.Properties["asyncResultFile"]
     $resultFilePath = if ($resultFileProperty) { $resultFileProperty.Value } else { $null }
+    $logPathProperty = $Task.PSObject.Properties["logPath"]
+    $logPath = if ($logPathProperty) { $logPathProperty.Value } else { $null }
     $exitCode = 0
     if ($resultFilePath -and (Test-Path $resultFilePath)) {
         $rawExitCode = (Get-Content -LiteralPath $resultFilePath -TotalCount 1 -ErrorAction SilentlyContinue).Trim()
@@ -188,6 +260,9 @@ function Complete-AsyncTask {
         return $true
     }
 
+    if ($logPath) {
+        Write-Host "Falha registrada em log: $logPath"
+    }
     Set-StateProperty -Object $Task -Name "status" -Value "failed"
     Save-State -State $State
     return $true
@@ -209,6 +284,7 @@ function Show-RunnerMessage {
 }
 
 if (-not (Test-Path $stateFile)) {
+    Write-RunnerLog "state.json nao encontrado."
     Remove-ResumeRunKey
     $runnerForm.Close()
     Show-RunnerMessage "Nenhum estado de execucao foi encontrado." "Finalizacao" ([System.Windows.Forms.MessageBoxIcon]::Warning)
@@ -229,6 +305,7 @@ while ($true) {
     if ($failedTask) {
         $failedExitCodeProperty = $failedTask.PSObject.Properties["lastExitCode"]
         $failedExitCode = if ($failedExitCodeProperty) { [int]$failedExitCodeProperty.Value } else { 1 }
+        Write-RunnerLog "Etapa falhou: $($failedTask.name) (codigo $failedExitCode)."
         Update-RunnerUi -StepText "Falha na execucao" -DetailText "A etapa '$($failedTask.name)' retornou codigo $failedExitCode." -Percent 0
         Start-Sleep -Seconds 1
         $runnerForm.Close()
@@ -240,6 +317,7 @@ while ($true) {
     $runningTasks = @($state.tasks | Where-Object { $_.status -eq "running" })
 
     if (-not $pendingTask -and $runningTasks.Count -eq 0) {
+        Write-RunnerLog "Execucao concluida com sucesso."
         Remove-ResumeRunKey
         Remove-Item -Path $stateFile -Force -ErrorAction SilentlyContinue
         Update-RunnerUi -StepText "Concluido" -DetailText "Todas as etapas foram executadas." -Percent 100
@@ -272,26 +350,27 @@ while ($true) {
     }
 
     Write-Host "Executando etapa: $($pendingTask.name)"
+    Ensure-TaskExecutionArtifacts -State $state -Task $pendingTask
+    $logPath = $pendingTask.PSObject.Properties["logPath"].Value
+    Write-RunnerLog "Executando etapa: $($pendingTask.name) | log: $logPath"
+    Write-Host "Log da etapa: $logPath"
     if (-not $waitForCompletion) {
-        Start-AsyncTaskProcess -State $state -Task $pendingTask
+        [void](Start-TaskProcess -State $state -Task $pendingTask -WaitForCompletion $false)
         Start-Sleep -Milliseconds 250
         continue
     }
 
-    $process = Start-Process -FilePath "powershell.exe" -ArgumentList $psArgs -Wait -PassThru
-    $exitCode = $process.ExitCode
-    Set-StateProperty -Object $pendingTask -Name "lastExitCode" -Value $exitCode
-    Set-StateProperty -Object $pendingTask -Name "lastEndAt" -Value ((Get-Date).ToString("o"))
-    Set-StateProperty -Object $pendingTask -Name "processId" -Value $null
+    [void](Start-TaskProcess -State $state -Task $pendingTask -WaitForCompletion $true)
+    [void](Complete-AsyncTask -State $state -Task $pendingTask)
+    $exitCodeProperty = $pendingTask.PSObject.Properties["lastExitCode"]
+    $exitCode = if ($exitCodeProperty) { [int]$exitCodeProperty.Value } else { 1 }
 
     if ($exitCode -eq 0) {
-        Set-StateProperty -Object $pendingTask -Name "status" -Value "done"
-        Remove-AsyncArtifacts -Task $pendingTask
-        Save-State -State $state
         continue
     }
 
     if ($rebootExitCodes -contains $exitCode) {
+        Write-RunnerLog "Reinicio solicitado pela etapa: $($pendingTask.name) (codigo $exitCode)."
         Set-StateProperty -Object $pendingTask -Name "status" -Value "pending"
         Set-StateProperty -Object $pendingTask -Name "rebootCount" -Value ([int]$pendingTask.rebootCount + 1)
         Save-State -State $state
@@ -303,8 +382,8 @@ while ($true) {
     }
 
     Set-StateProperty -Object $pendingTask -Name "status" -Value "failed"
-    Remove-AsyncArtifacts -Task $pendingTask
     Save-State -State $state
+    Write-RunnerLog "Falha final na etapa: $($pendingTask.name) (codigo $exitCode)."
     Update-RunnerUi -StepText "Falha na execucao" -DetailText "A etapa '$($pendingTask.name)' retornou codigo $exitCode." -Percent $percent
     Start-Sleep -Seconds 1
     $runnerForm.Close()

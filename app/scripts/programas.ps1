@@ -34,8 +34,10 @@ $programList = @(
     [PSCustomObject]@{
         Key = "ninite_web"
         Name = "Ninite AnyDesk Chrome Firefox Foxit Reader"
-        Path = Resolve-InstallerPath -BaseDirectory $softwareDir -ExpectedName "Ninite AnyDesk Chrome Firefox Foxit Reader Installer.exe" -FallbackPatterns @(
+        Path = Resolve-InstallerPath -BaseDirectory $softwareDir -ExpectedName "Ninite AnyDeskChromeFirefoxFoxitReaderInstaller.exe" -FallbackPatterns @(
+            "Ninite*AnyDeskChromeFirefoxFoxitReaderInstaller.exe",
             "Ninite*AnyDesk*Chrome*Firefox*Foxit*Installer.exe",
+            "Ninite*AnyDeskChrome*Firefox*Foxit*Installer.exe",
             "Ninite*Chrome*Firefox*Foxit*Installer.exe",
             "Ninite*AnyDesk*Installer.exe"
         )
@@ -45,8 +47,10 @@ $programList = @(
     [PSCustomObject]@{
         Key = "ninite_tools"
         Name = "Ninite Glary Malwarebytes Revo TeraCopy"
-        Path = Resolve-InstallerPath -BaseDirectory $softwareDir -ExpectedName "Ninite Glary Malwarebytes Revo TeraCopy Installer.exe" -FallbackPatterns @(
+        Path = Resolve-InstallerPath -BaseDirectory $softwareDir -ExpectedName "NiniteGlaryMalwarebytesRevoTeraCopyInstaller.exe" -FallbackPatterns @(
+            "NiniteGlaryMalwarebytesRevoTeraCopyInstaller.exe",
             "Ninite*Glary*Malwarebytes*Revo*TeraCopy*Installer.exe",
+            "Ninite*GlaryMalwarebytesRevoTeraCopy*Installer.exe",
             "Ninite*Malwarebytes*Revo*TeraCopy*Installer.exe",
             "Ninite*Glary*Installer.exe"
         )
@@ -62,23 +66,52 @@ $programList = @(
     }
 )
 
+Write-Host "Pacotes solicitados: $SelectionKeysCsv"
+
 if ($SelectionKeysCsv) {
     $selectedKeys = $SelectionKeysCsv.Split(",", [System.StringSplitOptions]::RemoveEmptyEntries) | ForEach-Object { $_.Trim() }
     $programList = $programList | Where-Object { $selectedKeys -contains $_.Key }
 }
 
+$missingInstallers = @()
+
+if ($SelectionKeysCsv -and @($programList).Count -eq 0) {
+    Write-Error "Nenhum instalador corresponde a selecao recebida: $SelectionKeysCsv"
+    exit 1
+}
+
 foreach ($program in $programList) {
+    Write-Host "Caminho resolvido para $($program.Name): $($program.Path)"
+
     if (-not (Test-Path $program.Path)) {
-        Write-Warning "Instalador nao encontrado: $($program.Path)"
+        $missingInstallers += $program.Path
+        Write-Error "Instalador nao encontrado: $($program.Path)"
         continue
     }
 
+    Unblock-File -LiteralPath $program.Path -ErrorAction SilentlyContinue
     Write-Host "Executando instalacao: $($program.Name)"
 
     if ($program.Type -eq "msi") {
-        Start-Process -FilePath "msiexec.exe" -ArgumentList $program.Arguments -Wait
+        $process = Start-Process -FilePath "msiexec.exe" -ArgumentList $program.Arguments -Wait -PassThru
+        if ($process.ExitCode -ne 0) {
+            Write-Error "A instalacao MSI falhou para $($program.Name) com codigo $($process.ExitCode)."
+            exit $process.ExitCode
+        }
         continue
     }
 
-    Start-Process -FilePath $program.Path -ArgumentList $program.Arguments -Wait
+    if ($program.Arguments -and $program.Arguments.Count -gt 0) {
+        $process = Start-Process -FilePath $program.Path -ArgumentList $program.Arguments -Wait -PassThru
+    } else {
+        $process = Start-Process -FilePath $program.Path -Wait -PassThru
+    }
+    if ($process.ExitCode -ne 0) {
+        Write-Error "A instalacao falhou para $($program.Name) com codigo $($process.ExitCode)."
+        exit $process.ExitCode
+    }
+}
+
+if ($missingInstallers.Count -gt 0) {
+    exit 1
 }

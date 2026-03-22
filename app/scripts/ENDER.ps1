@@ -168,11 +168,15 @@ function AtualizarEstadoBotaoOK {
 }
 
 function Get-StateRoot {
-    return (Join-Path $env:ProgramData "FINALIZACAO")
+    return (Join-Path (Split-Path -Parent $script:appRoot) ".state")
 }
 
 function Get-StateFilePath {
     return (Join-Path (Get-StateRoot) "state.json")
+}
+
+function Get-LogRoot {
+    return (Join-Path (Split-Path -Parent $script:appRoot) "logs")
 }
 
 function Register-ResumeRunKey {
@@ -350,6 +354,11 @@ $buttonOK.Add_Click({
         New-Item -ItemType Directory -Path $stateRoot -Force | Out-Null
     }
 
+    $logRoot = Get-LogRoot
+    if (-not (Test-Path $logRoot)) {
+        New-Item -ItemType Directory -Path $logRoot -Force | Out-Null
+    }
+
     $state = [PSCustomObject]@{
         version = 1
         createdAt = (Get-Date).ToString("o")
@@ -362,7 +371,11 @@ $buttonOK.Add_Click({
     $state | ConvertTo-Json -Depth 8 | Set-Content -Path (Get-StateFilePath) -Encoding UTF8
     Register-ResumeRunKey
 
-    Start-Process -FilePath "powershell.exe" -ArgumentList "-ExecutionPolicy Bypass -File `"$((Join-Path $scriptDir "runner.ps1"))`"" -NoNewWindow
+    $runnerPath = Join-Path $scriptDir "runner.ps1"
+    $runnerStdOut = Join-Path $logRoot "runner_stdout.log"
+    $runnerStdErr = Join-Path $logRoot "runner_stderr.log"
+    "[{0}] ENDER iniciou o runner." -f (Get-Date -Format "yyyy-MM-dd HH:mm:ss") | Out-File -LiteralPath (Join-Path $logRoot "ender.log") -Append -Encoding UTF8
+    Start-Process -FilePath "powershell.exe" -ArgumentList "-ExecutionPolicy Bypass -File `"$runnerPath`"" -WindowStyle Hidden -RedirectStandardOutput $runnerStdOut -RedirectStandardError $runnerStdErr
     $form.Close()
 })
 $form.Controls.Add($buttonOK)

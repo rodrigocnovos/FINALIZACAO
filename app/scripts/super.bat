@@ -9,6 +9,8 @@ set "CONFIG_DIR=%APP_DIR%\config"
 set "SCRIPTS_DIR=%APP_DIR%\scripts"
 set "PROJECT_ROOT=%APP_DIR%\.."
 for %%I in ("%PROJECT_ROOT%") do set "PROJECT_ROOT=%%~fI"
+set "STATE_ROOT=%PROJECT_ROOT%\.state"
+set "LOG_ROOT=%PROJECT_ROOT%\logs"
 set "REPO_NAME=FINALIZACAO"
 set "DEFAULT_BRANCH=main"
 set "UPDATE_BRANCH=%DEFAULT_BRANCH%"
@@ -18,6 +20,9 @@ set "VERSION_FILE_PATH=%CONFIG_DIR%\launcher.version"
 set "WINDOW_TITLE=Launcher FINALIZACAO"
 
 cd /d "%PROJECT_ROOT%"
+if not exist "%STATE_ROOT%" mkdir "%STATE_ROOT%" >nul 2>&1
+if not exist "%LOG_ROOT%" mkdir "%LOG_ROOT%" >nul 2>&1
+>> "%LOG_ROOT%\super.log" echo [%date% %time%] Launcher iniciado em "%PROJECT_ROOT%"
 title %WINDOW_TITLE% - Iniciando
 echo [1/5] Iniciando launcher...
 
@@ -191,5 +196,6 @@ if exist "%TEMP_ROOT%" rmdir /s /q "%TEMP_ROOT%" >nul 2>&1
 :run_script
 title %WINDOW_TITLE% - Executando script principal
 echo Executando rotina principal...
+>> "%LOG_ROOT%\super.log" echo [%date% %time%] Executando ENDER.ps1
 PowerShell.exe -NoProfile -ExecutionPolicy Bypass -Command "Get-ChildItem -LiteralPath '%APP_DIR%' -Recurse -File | Unblock-File -ErrorAction SilentlyContinue; & '%SCRIPTS_DIR%\ENDER.ps1'"
 goto :eof
