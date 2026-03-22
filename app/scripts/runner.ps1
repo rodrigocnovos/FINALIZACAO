@@ -1,6 +1,14 @@
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
+Add-Type -Name Window -Namespace Console -MemberDefinition '
+[DllImport("Kernel32.dll")]
+public static extern IntPtr GetConsoleWindow();
+[DllImport("user32.dll")]
+public static extern bool ShowWindow(IntPtr hWnd, Int32 nCmdShow);
+'
+$consolePtr = [Console.Window]::GetConsoleWindow()
+[Console.Window]::ShowWindow($consolePtr, 0)
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $appRoot = Split-Path -Parent $scriptDir
 $projectRoot = Split-Path -Parent $appRoot
@@ -215,7 +223,7 @@ function Start-TaskProcess {
 
     Ensure-TaskExecutionArtifacts -State $State -Task $Task
     $wrapperPath = $Task.PSObject.Properties["asyncWrapperFile"].Value
-    $process = Start-Process -FilePath "powershell.exe" -ArgumentList "-ExecutionPolicy Bypass -File `"$wrapperPath`"" -PassThru
+    $process = Start-Process -FilePath "powershell.exe" -ArgumentList "-WindowStyle Hidden -ExecutionPolicy Bypass -File `"$wrapperPath`"" -PassThru
     Set-StateProperty -Object $Task -Name "processId" -Value $process.Id
     Save-State -State $State
 

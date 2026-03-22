@@ -107,32 +107,18 @@ foreach ($program in $programList) {
         
         Add-Type -AssemblyName UIAutomationClient
         $root = [System.Windows.Automation.AutomationElement]::RootElement
-        $condWindow = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, "Ninite")
+        $condProcess = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ProcessIdProperty, $process.Id)
         
         $niniteFinished = $false
         while (-not $process.HasExited) {
             Start-Sleep -Seconds 5
-            $window = $root.FindFirst([System.Windows.Automation.TreeScope]::Children, $condWindow)
+            $window = $root.FindFirst([System.Windows.Automation.TreeScope]::Children, $condProcess)
             if ($window) {
-                # Verifica a existencia do botao "Close" ou "Fechar" habilitado
-                $condBtn = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Button)
-                $buttons = $window.FindAll([System.Windows.Automation.TreeScope]::Descendants, $condBtn)
-                foreach ($btn in $buttons) {
-                    if ($btn.Current.Name -match "^(Close|Fechar|OK|Ok)$" -and $btn.Current.IsEnabled) {
-                        Write-Host "Instalacao do Ninite concluida (Botao identificado). Encerrando..."
-                        $process | Stop-Process -Force -ErrorAction SilentlyContinue
-                        $niniteFinished = $true
-                        break
-                    }
-                }
-                if ($niniteFinished) { break }
-                
-                # Checkbox / Textos de status como fallback
-                $condText = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Text)
-                $texts = $window.FindAll([System.Windows.Automation.TreeScope]::Descendants, $condText)
-                foreach ($txt in $texts) {
-                    if ($txt.Current.Name -match "(?i)(Finished|Finalizado)") {
-                        Write-Host "Status Finalizado detectado no Ninite. Encerrando..."
+                $allElements = $window.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition)
+                foreach ($el in $allElements) {
+                    $elName = $el.Current.Name
+                    if ($elName -match "(?i)(Close|Fechar|OK|Finished|Finalizado)") {
+                        Write-Host "Instalacao do Ninite concluida (Texto/Botao identificado: $elName). Encerrando..."
                         $process | Stop-Process -Force -ErrorAction SilentlyContinue
                         $niniteFinished = $true
                         break

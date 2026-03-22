@@ -375,7 +375,7 @@ $buttonOK.Add_Click({
     $runnerStdOut = Join-Path $logRoot "runner_stdout.log"
     $runnerStdErr = Join-Path $logRoot "runner_stderr.log"
     "[{0}] ENDER iniciou o runner." -f (Get-Date -Format "yyyy-MM-dd HH:mm:ss") | Out-File -LiteralPath (Join-Path $logRoot "ender.log") -Append -Encoding UTF8
-    Start-Process -FilePath "powershell.exe" -ArgumentList "-ExecutionPolicy Bypass -File `"$runnerPath`"" -WindowStyle Minimized -RedirectStandardOutput $runnerStdOut -RedirectStandardError $runnerStdErr
+    Start-Process -FilePath "powershell.exe" -ArgumentList "-ExecutionPolicy Bypass -File `"$runnerPath`"" -RedirectStandardOutput $runnerStdOut -RedirectStandardError $runnerStdErr
     $form.Close()
 })
 $form.Controls.Add($buttonOK)
