@@ -6,18 +6,50 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $appRoot = Split-Path -Parent $scriptDir
 $softwareDir = Join-Path $appRoot "softwares"
 
+function Resolve-InstallerPath {
+    param(
+        [string]$BaseDirectory,
+        [string]$ExpectedName,
+        [string[]]$FallbackPatterns
+    )
+
+    $expectedPath = Join-Path $BaseDirectory $ExpectedName
+    if (Test-Path $expectedPath) {
+        return $expectedPath
+    }
+
+    foreach ($pattern in $FallbackPatterns) {
+        $candidate = Get-ChildItem -Path $BaseDirectory -Filter $pattern -File -ErrorAction SilentlyContinue |
+            Sort-Object -Property Name |
+            Select-Object -First 1
+        if ($candidate) {
+            return $candidate.FullName
+        }
+    }
+
+    return $expectedPath
+}
+
 $programList = @(
     [PSCustomObject]@{
         Key = "ninite_web"
         Name = "Ninite AnyDesk Chrome Firefox Foxit Reader"
-        Path = Join-Path $softwareDir "Ninite AnyDesk Chrome Firefox Foxit Reader Installer.exe"
+        Path = Resolve-InstallerPath -BaseDirectory $softwareDir -ExpectedName "Ninite AnyDesk Chrome Firefox Foxit Reader Installer.exe" -FallbackPatterns @(
+            "Ninite*AnyDesk*Chrome*Firefox*Foxit*Installer.exe",
+            "Ninite*Chrome*Firefox*Foxit*Installer.exe",
+            "Ninite*AnyDesk*Installer.exe"
+        )
         Type = "exe"
         Arguments = @()
     },
     [PSCustomObject]@{
         Key = "ninite_tools"
         Name = "Ninite Glary Malwarebytes Revo TeraCopy"
-        Path = Join-Path $softwareDir "Ninite Glary Malwarebytes Revo TeraCopy Installer.exe"
+        Path = Resolve-InstallerPath -BaseDirectory $softwareDir -ExpectedName "Ninite Glary Malwarebytes Revo TeraCopy Installer.exe" -FallbackPatterns @(
+            "Ninite*Glary*Malwarebytes*Revo*TeraCopy*Installer.exe",
+            "Ninite*Malwarebytes*Revo*TeraCopy*Installer.exe",
+            "Ninite*Glary*Installer.exe"
+        )
         Type = "exe"
         Arguments = @()
     },
