@@ -1,5 +1,6 @@
 param(
-    [switch]$SkipRestart
+    [switch]$SkipRestart,
+    [switch]$AutoBoot
 )
 
 Add-Type -AssemblyName System.Windows.Forms
@@ -583,7 +584,7 @@ function Show-HumanTestLoopInfoForm {
 }
 
 Write-Output "Script PowerShell para abrir programas e simular comportamento humano (Teste de Estresse/Uso)"
-if (-not (Show-HumanTestStartConfirmationForm)) {
+if (-not $AutoBoot -and -not (Show-HumanTestStartConfirmationForm)) {
     Write-Output "Execucao cancelada pelo usuario antes do inicio do teste."
     return
 }

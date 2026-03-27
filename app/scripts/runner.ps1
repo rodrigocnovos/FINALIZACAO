@@ -132,6 +132,76 @@ function Stop-PendingRestart {
     Start-Process -FilePath "shutdown.exe" -ArgumentList "/a" -WindowStyle Hidden -ErrorAction SilentlyContinue | Out-Null
 }
 
+function Close-BrowsersBeforeRestart {
+    $edgeProcessName = "msedge"
+    $edgeUserDataRoot = Join-Path $env:LOCALAPPDATA "Microsoft\Edge\User Data"
+
+    Write-RunnerLog "Fechando o Microsoft Edge antes do reinicio."
+
+    $edgeProcesses = Get-Process -Name $edgeProcessName -ErrorAction SilentlyContinue
+    foreach ($process in @($edgeProcesses)) {
+        try {
+            if ($process.MainWindowHandle -ne 0) {
+                [void]$process.CloseMainWindow()
+            }
+        }
+        catch {
+            Write-RunnerLog "Falha ao solicitar fechamento do processo $($process.ProcessName) (PID $($process.Id))."
+        }
+    }
+
+    $timeout = [TimeSpan]::FromSeconds(15)
+    $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+    do {
+        Start-Sleep -Milliseconds 500
+        $edgeProcesses = Get-Process -Name $edgeProcessName -ErrorAction SilentlyContinue
+    } while ($edgeProcesses -and $stopwatch.Elapsed -lt $timeout)
+
+    foreach ($process in @($edgeProcesses)) {
+        try {
+            Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+            Write-RunnerLog "Processo do Edge encerrado a forca: $($process.ProcessName) (PID $($process.Id))."
+        }
+        catch {
+            Write-RunnerLog "Falha ao encerrar a forca o processo $($process.ProcessName) (PID $($process.Id))."
+        }
+    }
+
+    if (-not (Test-Path $edgeUserDataRoot)) {
+        return
+    }
+
+    $edgeProfiles = Get-ChildItem -Path $edgeUserDataRoot -Directory -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -eq "Default" -or $_.Name -like "Profile *" }
+
+    foreach ($profile in @($edgeProfiles)) {
+        $sessionsPath = Join-Path $profile.FullName "Sessions"
+        $sessionFiles = @()
+
+        if (Test-Path $sessionsPath) {
+            $sessionFiles += Get-ChildItem -Path $sessionsPath -File -ErrorAction SilentlyContinue |
+                Where-Object { $_.Name -like "Session_*" -or $_.Name -like "Tabs_*" }
+        }
+
+        foreach ($legacyFileName in @("Current Session", "Current Tabs", "Last Session", "Last Tabs")) {
+            $legacyPath = Join-Path $profile.FullName $legacyFileName
+            if (Test-Path $legacyPath) {
+                $sessionFiles += Get-Item -LiteralPath $legacyPath -ErrorAction SilentlyContinue
+            }
+        }
+
+        foreach ($sessionFile in @($sessionFiles | Sort-Object -Property FullName -Unique)) {
+            try {
+                Remove-Item -LiteralPath $sessionFile.FullName -Force -ErrorAction SilentlyContinue
+                Write-RunnerLog "Arquivo de sessao do Edge removido: $($sessionFile.FullName)"
+            }
+            catch {
+                Write-RunnerLog "Falha ao remover arquivo de sessao do Edge: $($sessionFile.FullName)"
+            }
+        }
+    }
+}
+
 function Stop-FinalizacaoPowerShellProcesses {
     $scriptMarkers = @(
         (Join-Path $scriptDir "runner.ps1"),
@@ -452,6 +522,7 @@ while ($true) {
         Save-State -State $state
         Update-RunnerUi -StepText "Reinicio necessario" -DetailText "O computador sera reiniciado para continuar a finalizacao." -Percent $percent
         Start-Sleep -Seconds 2
+        Close-BrowsersBeforeRestart
         $runnerForm.Close()
         Restart-Computer -Force
         exit 0

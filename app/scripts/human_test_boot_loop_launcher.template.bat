@@ -13,5 +13,5 @@ if "%ERRORLEVEL%"=="6" (
     exit /b 0
 )
 
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT_PATH%"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT_PATH%" -AutoBoot
 exit /b %ERRORLEVEL%
