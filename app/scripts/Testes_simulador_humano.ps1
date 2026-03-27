@@ -855,7 +855,7 @@ catch {
 try { $Excel.Quit() } catch {}
 try { $Word.Quit() } catch {}
 
-$processToClose = @("chrome", "msedge", "powerpnt", "excel", "winword", "prime95", "notepad", "mspaint", "write", "cmd", "powershell", "taskmgr", "SnippingTool", "calc")
+$processToClose = @("chrome", "msedge", "powerpnt", "excel", "winword", "prime95", "notepad", "mspaint", "write", "cmd", "taskmgr", "SnippingTool", "calc")
 foreach ($proc in $processToClose) {
     Get-Process -Name $proc -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 }
