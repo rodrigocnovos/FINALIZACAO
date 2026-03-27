@@ -250,10 +250,10 @@ $checkboxData = @(
     @{Texto = "Forçar atualizações do Windows Update e Loja"; Nome = "wupdate.ps1"; Ordem = 120; Espera = $true },
     @{Texto = "Selecionar programas para bloqueio no Firewall"; Nome = "list_program_firewall.ps1"; Ordem = 130; Espera = $true },
     @{Texto = "Bloquear as atualizações"; Nome = "block.ps1"; Ordem = 140; Espera = $true },
-    @{Texto = "Ativador Windows 10/11"; Nome = "licenca.ps1"; Ordem = 900; Espera = $true },
+    @{Texto = "Ativador Windows 10/11"; Nome = "licenca.ps1"; Ordem = 998; Espera = $true },
     @{Texto = "Gerar relatório de saúde de bateria"; Nome = "bat.ps1"; Ordem = 150; Espera = $false },
     @{Texto = "Abrir sites de testes de Teclado, Câmera e Microfone"; Nome = "test.ps1"; Ordem = 160; Espera = $false },
-    @{Texto = "Script para correções diversas"; Nome = "correction.ps1"; Ordem = 170; Espera = $true },
+    @{Texto = "Script para correções diversas"; Nome = "correction.ps1"; Ordem = 997; Espera = $true },
     @{Texto = "Padronização, papel de parede, ícones de contatos e menus"; Nome = "wallpaper.ps1"; Ordem = 180; Espera = $false },
     @{Texto = "Criar ponto de restauração"; Nome = "restorepoint.ps1"; Ordem = 190; Espera = $true },
     @{Texto = "Limpeza de temporários, arquivos da instalação e rastros de uso"; Nome = "limpeza.ps1"; Ordem = 999; Espera = $true }
