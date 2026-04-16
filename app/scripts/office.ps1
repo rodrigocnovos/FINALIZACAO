@@ -13,12 +13,16 @@ class OfficeOption {
     [string]$Name
     [string]$Description
     [string]$ConfigPath
+    [string]$InstallerPath
+    [bool]$UseLegacyAutomation
 
-    OfficeOption([string]$key, [string]$name, [string]$description, [string]$configPath) {
+    OfficeOption([string]$key, [string]$name, [string]$description, [string]$configPath, [string]$installerPath, [bool]$useLegacyAutomation) {
         $this.Key = $key
         $this.Name = $name
         $this.Description = $description
         $this.ConfigPath = $configPath
+        $this.InstallerPath = $installerPath
+        $this.UseLegacyAutomation = $useLegacyAutomation
     }
 
     [string] ToString() {
@@ -32,13 +36,17 @@ $officeOptions = @(
         "office2024_basic",
         "Office 2024 Word + Excel + PowerPoint",
         "Usa o Configure.xml atual com Word, Excel e PowerPoint.",
-        (Join-Path $officeBasePath "Configure.xml")
+        (Join-Path $officeBasePath "Configure.xml"),
+        (Join-Path $officeBasePath "OInstall_x64.exe"),
+        $true
     ),
     [OfficeOption]::new(
         "office2024_full",
         "Office 2024 completo + Access + Visio + Project + Publisher",
-        "Usa o XML completo com Access, Visio, Project e Publisher.",
-        (Join-Path $officeBasePath "office_visio_publisher_project.xml")
+        "Usa o novo OfficeSetup.exe com o XML completo de Access, Visio, Project e Publisher.",
+        (Join-Path $officeBasePath "office_visio_publisher_project.xml"),
+        (Join-Path $officeBasePath "OfficeSetup.exe"),
+        $false
     )
 )
 
@@ -62,10 +70,9 @@ function Install-OfficeFromConfig {
         throw "Opcao de Office invalida."
     }
 
-    $officeExe = Join-Path $officeBasePath "OInstall_x64.exe"
     $zipInstaller = Join-Path $officeBasePath "OInstall.zip"
 
-    if (-not (Test-Path $officeExe)) {
+    if ($Option.UseLegacyAutomation -and -not (Test-Path $Option.InstallerPath)) {
         Expand-Archive -Path $zipInstaller -DestinationPath $officeBasePath -Force
     }
 
@@ -73,30 +80,39 @@ function Install-OfficeFromConfig {
         throw "Arquivo de configuracao nao encontrado: $($Option.ConfigPath)"
     }
 
-    Write-Host "Iniciando instalacao do Office e configurando automacao de tela (OInstall_x64.exe)..."
-    $process = Start-Process -FilePath $officeExe -ArgumentList "/configure `"$($Option.ConfigPath)`"", "/activate" -PassThru
-    
-    Add-Type -AssemblyName UIAutomationClient
-    $root = [System.Windows.Automation.AutomationElement]::RootElement
-    
-    $officeFinished = $false
-    while (-not $process.HasExited) {
-        Start-Sleep -Seconds 5
-        $condProcess = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ProcessIdProperty, $process.Id)
-        $window = $root.FindFirst([System.Windows.Automation.TreeScope]::Children, $condProcess)
-        if ($window) {
-            $allElements = $window.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition)
-            foreach ($el in $allElements) {
-                $elName = $el.Current.Name
-                if ($elName -match "(?i)^(Close|Fechar|Exit|Sair|OK|Ok|Finished|Finalizado|Completo|Concluido|Completed)$") {
-                    Write-Host "Instalacao do Office concluida (Texto/Botao identificado: $elName). Encerrando C2R..."
-                    $process | Stop-Process -Force -ErrorAction SilentlyContinue
-                    $officeFinished = $true
-                    break
+    if (-not (Test-Path $Option.InstallerPath)) {
+        throw "Instalador do Office nao encontrado: $($Option.InstallerPath)"
+    }
+
+    if ($Option.UseLegacyAutomation) {
+        Write-Host "Iniciando instalacao do Office com OInstall_x64.exe..."
+        $process = Start-Process -FilePath $Option.InstallerPath -ArgumentList "/configure `"$($Option.ConfigPath)`"", "/activate" -WorkingDirectory $officeBasePath -PassThru
+
+        Add-Type -AssemblyName UIAutomationClient
+        $root = [System.Windows.Automation.AutomationElement]::RootElement
+
+        $officeFinished = $false
+        while (-not $process.HasExited) {
+            Start-Sleep -Seconds 5
+            $condProcess = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ProcessIdProperty, $process.Id)
+            $window = $root.FindFirst([System.Windows.Automation.TreeScope]::Children, $condProcess)
+            if ($window) {
+                $allElements = $window.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition)
+                foreach ($el in $allElements) {
+                    $elName = $el.Current.Name
+                    if ($elName -match "(?i)^(Close|Fechar|Exit|Sair|OK|Ok|Finished|Finalizado|Completo|Concluido|Completed)$") {
+                        Write-Host "Instalacao do Office concluida (Texto/Botao identificado: $elName). Encerrando C2R..."
+                        $process | Stop-Process -Force -ErrorAction SilentlyContinue
+                        $officeFinished = $true
+                        break
+                    }
                 }
+                if ($officeFinished) { break }
             }
-            if ($officeFinished) { break }
         }
+    } else {
+        Write-Host "Iniciando instalacao do Office com OfficeSetup.exe e XML dedicado..."
+        Start-Process -FilePath $Option.InstallerPath -ArgumentList "`"$($Option.ConfigPath)`"" -WorkingDirectory $officeBasePath -Wait
     }
 
     Disable-OfficeUpdates

@@ -250,9 +250,9 @@ $rightY = 130
 $checkboxData = @(
     @{Texto = "Checar se faltam drivers"; Nome = "rel_driver.ps1"; Ordem = 100; Espera = $true },
     @{Texto = "Forçar atualizações do Windows Update e Loja"; Nome = "wupdate.ps1"; Ordem = 120; Espera = $true },
-    @{Texto = "Selecionar programas para bloqueio no Firewall"; Nome = "list_program_firewall.ps1"; Ordem = 130; Espera = $true },
+    @{Texto = "Selecionar programas para bloqueio no Firewall"; Nome = "list_program_firewall.ps1"; Ordem = 998; Espera = $true },
     @{Texto = "Bloquear as atualizações"; Nome = "block.ps1"; Ordem = 140; Espera = $true },
-    @{Texto = "Ativador Windows 10/11"; Nome = "licenca.ps1"; Ordem = 998; Espera = $true },
+    @{Texto = "Ativador Windows 10/11"; Nome = "licenca.ps1"; Ordem = 997; Espera = $true },
     @{Texto = "Gerar relatório de saúde de bateria"; Nome = "bat.ps1"; Ordem = 150; Espera = $false },
     @{Texto = "Abrir sites de testes de Teclado, Câmera e Microfone"; Nome = "test.ps1"; Ordem = 160; Espera = $false },
     @{Texto = "Script para correções diversas"; Nome = "correction.ps1"; Ordem = 997; Espera = $true },
