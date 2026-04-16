@@ -1,5 +1,7 @@
-#Desbloquear os arquivos baixados da internet
-Unblock-File *
+# Desbloqueia o conteudo de app como fallback caso o launcher nao tenha feito isso antes.
+$launcherScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$launcherAppDir = Split-Path -Parent $launcherScriptDir
+Get-ChildItem -LiteralPath $launcherAppDir -Recurse -File -ErrorAction SilentlyContinue | Unblock-File -ErrorAction SilentlyContinue
 
 
 #Colocar o Edge como padrão

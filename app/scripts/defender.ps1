@@ -1,61 +1,154 @@
-function Exibir-Formulario {
-    Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
 
-    # Criar formulário
+function Get-ProtectionState {
+    $realTimeEnabled = $false
+    try {
+        $preference = Get-MpPreference -ErrorAction Stop
+        $realTimeEnabled = ($preference.DisableRealtimeMonitoring -eq $false)
+    } catch {
+        $realTimeEnabled = $false
+    }
+
+    $smartAppState = $null
+    try {
+        $computerStatus = Get-MpComputerStatus -ErrorAction Stop
+        $smartAppState = $computerStatus.SmartAppControlState
+    } catch {
+        $smartAppState = $null
+    }
+
+    $smartAppStateText = ""
+    if ($null -ne $smartAppState) {
+        $smartAppStateText = [string]$smartAppState
+    }
+
+    $smartAppDisabled = $true
+    if ($smartAppStateText) {
+        switch -Regex ($smartAppStateText.Trim()) {
+            '^(?i:off|disabled|0)$' { $smartAppDisabled = $true; break }
+            default { $smartAppDisabled = $false; break }
+        }
+    }
+
+    return [PSCustomObject]@{
+        RealTimeProtectionEnabled = $realTimeEnabled
+        SmartAppControlState      = if ($smartAppStateText) { $smartAppStateText } else { "Indisponivel" }
+        SmartAppControlDisabled   = $smartAppDisabled
+        RequiresAction            = ($realTimeEnabled -or -not $smartAppDisabled)
+    }
+}
+
+function Open-ProtectionSettings {
+    param(
+        [Parameter(Mandatory = $true)]
+        [pscustomobject]$State
+    )
+
+    if ($State.RealTimeProtectionEnabled) {
+        Start-Process "explorer.exe" -ArgumentList "windowsdefender://ThreatSettings" -ErrorAction SilentlyContinue | Out-Null
+    }
+
+    if (-not $State.SmartAppControlDisabled) {
+        Start-Process "explorer.exe" -ArgumentList "windowsdefender://appbrowser" -ErrorAction SilentlyContinue | Out-Null
+    }
+}
+
+function Get-InstructionText {
+    param(
+        [Parameter(Mandatory = $true)]
+        [pscustomobject]$State
+    )
+
+    $lines = @(
+        "Desative as protecoes abaixo para poder avancar.",
+        "",
+        ("Protecao em tempo real: " + ($(if ($State.RealTimeProtectionEnabled) { "ATIVADA" } else { "DESATIVADA" }))),
+        ("Smart App Control: " + $State.SmartAppControlState)
+    )
+
+    if ($State.RealTimeProtectionEnabled) {
+        $lines += ""
+        $lines += "A tela de Virus e ameacas foi aberta."
+    }
+
+    if (-not $State.SmartAppControlDisabled) {
+        $lines += ""
+        $lines += "A tela App e controle do navegador foi aberta."
+        $lines += "Desligue o Smart App Control para continuar."
+    }
+
+    if (-not $State.RequiresAction) {
+        $lines = @(
+            "Protecao em tempo real e Smart App Control ja estao desativados.",
+            "",
+            "Clique em OK para continuar."
+        )
+    }
+
+    return ($lines -join [Environment]::NewLine)
+}
+
+function Show-ProtectionForm {
+    param(
+        [Parameter(Mandatory = $true)]
+        [pscustomobject]$InitialState
+    )
+
     $form = New-Object Windows.Forms.Form
     $form.TopMost = $true
-    $form.Size = New-Object Drawing.Size(300, 150)
+    $form.Size = New-Object Drawing.Size(460, 260)
     $form.StartPosition = "CenterScreen"
-    $form.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("Configuração de Antivírus"))
+    $form.Text = "Configuracao de Antivirus"
 
-    # Adicionar um rótulo informativo
     $label = New-Object Windows.Forms.Label
-    $label.Text = [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding("ISO-8859-1").GetBytes("DESATIVE O ANTIVÍRUS TEMPORARIAMENTE"))
     $label.Location = New-Object Drawing.Point(20, 20)
-    $label.AutoSize = $true
+    $label.Size = New-Object Drawing.Size(400, 130)
+    $label.Text = Get-InstructionText -State $InitialState
     $form.Controls.Add($label)
 
-    # Criar botão OK
-    $buttonOK = New-Object Windows.Forms.Button
-    $buttonOK.Location = New-Object Drawing.Point(100, 60)
-    $buttonOK.Size = New-Object Drawing.Size(90, 40)
-    $buttonOK.Text = "OK"
-    $buttonOK.Enabled = $false  # Desabilitado inicialmente
-    $form.Controls.Add($buttonOK)
+    $buttonOpen = New-Object Windows.Forms.Button
+    $buttonOpen.Location = New-Object Drawing.Point(20, 165)
+    $buttonOpen.Size = New-Object Drawing.Size(170, 35)
+    $buttonOpen.Text = "Abrir configuracoes"
+    $buttonOpen.Add_Click({
+        $currentState = Get-ProtectionState
+        Open-ProtectionSettings -State $currentState
+        $label.Text = Get-InstructionText -State $currentState
+    })
+    $form.Controls.Add($buttonOpen)
 
-    # Configurar evento de clique do botão
+    $buttonOK = New-Object Windows.Forms.Button
+    $buttonOK.Location = New-Object Drawing.Point(320, 165)
+    $buttonOK.Size = New-Object Drawing.Size(100, 35)
+    $buttonOK.Text = "OK"
+    $buttonOK.Enabled = (-not $InitialState.RequiresAction)
     $buttonOK.Add_Click({
-        Write-Host "Botão OK pressionado. Real-Time Protection está desativado."
         $form.Close()
     })
+    $form.Controls.Add($buttonOK)
 
-    # Timer para atualizar o estado do botão
     $timer = New-Object Windows.Forms.Timer
-    $timer.Interval = 1000  # Intervalo de 1 segundo para verificar o status
+    $timer.Interval = 1000
     $timer.Add_Tick({
-        $realTimeProtectionEnabled = (Get-MpPreference).DisableRealtimeMonitoring -eq $false
-        $buttonOK.Enabled = -not $realTimeProtectionEnabled  # Habilita apenas se o Real-Time Protection estiver desativado
+        $currentState = Get-ProtectionState
+        $label.Text = Get-InstructionText -State $currentState
+        $buttonOK.Enabled = (-not $currentState.RequiresAction)
     })
     $timer.Start()
 
-    # Mostrar formulário
-    # $form.FormClosed.Add({
-    #     $timer.Stop()  # Parar o timer ao fechar o formulário
-    # })
-    $form.ShowDialog()
+    $form.Add_FormClosed({
+        $timer.Stop()
+        $timer.Dispose()
+    })
+
+    [void]$form.ShowDialog()
 }
 
-# Abrir configurações do Windows Defender
-$opcoes = "windowsdefender://ThreatSettings"
-$programa = "explorer.exe"
-Start-Process $programa -ArgumentList $opcoes -NoNewWindow -PassThru -Wait
-
-# Verificar o status do Real-Time Protection
-$realTimeProtectionEnabled = (Get-MpPreference).DisableRealtimeMonitoring -eq $false
-
-# Exibir o formulário apenas se o Real-Time Protection estiver ativado
-if ($realTimeProtectionEnabled) {
-    Exibir-Formulario
+$state = Get-ProtectionState
+if ($state.RequiresAction) {
+    Open-ProtectionSettings -State $state
+    Show-ProtectionForm -InitialState $state
 } else {
-    Write-Host "O Real-Time Protection já está desativado."
+    Write-Host "Protecao em tempo real e Smart App Control ja estao desativados."
 }
